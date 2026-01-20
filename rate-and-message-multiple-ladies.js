@@ -6,7 +6,13 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
   // ===============================
   const tierConfigs = [
     { tierId: 1, startPage: 1, endPage: 2 },
-    // { tierId: 9,  startPage: 1, endPage: 3 },
+    // { tierId: 9, startPage: 1, endPage: 3 },
+  ];
+
+  // ❌ Profiles you NEVER want to visit / rate / message
+  const excludedProfileIds = [
+    '11265638',
+    // '99887766',
   ];
 
   const m1 = 'Awesome look my dear, max stars and big hugs 😍'; // rating message
@@ -80,10 +86,22 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
     }
   }
 
-  // OPTIONAL: remove duplicates across tiers
+  // Remove duplicates across tiers
   allProfiles = [...new Set(allProfiles)];
 
-  console.log(`✅ STEP 0 DONE — Total unique profiles: ${allProfiles.length}`);
+  console.log(`📊 Profiles before exclusion: ${allProfiles.length}`);
+
+  // ===============================
+  // STEP 0.5 — EXCLUDE MANUAL IDS
+  // ===============================
+  if (excludedProfileIds.length > 0) {
+    allProfiles = allProfiles.filter(
+      id => !excludedProfileIds.includes(id)
+    );
+    console.log(`🚫 Excluded ${excludedProfileIds.length} profile(s)`);
+  }
+
+  console.log(`✅ STEP 0 DONE — Profiles after exclusion: ${allProfiles.length}`);
 
   // ===============================
   // LOOP THROUGH EACH PROFILE
