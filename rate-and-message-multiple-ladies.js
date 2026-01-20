@@ -1,19 +1,20 @@
+// rate-and-message-multiple-ladies.js
 module.exports = async function runRateAndMessageMultipleLadies(page) {
 
   // ===============================
   // CONFIG (EDIT MANUALLY)
   // ===============================
-  const startPage = 1;
-  const endPage = 2;
-  const tierId = 10;
+  const tierConfigs = [
+    { tierId: 10, startPage: 1, endPage: 2 },
+    { tierId: 9,  startPage: 1, endPage: 3 },
+  ];
 
   const m1 = 'Awesome look my dear, max stars and big hugs 😍'; // rating message
-  const m2 = 'Awesome look my dear, big hugs 😍'; // won all podium prizes
-  const m3 = 'Awesome look my dear, big hugs 😍 168h'; // 168 hours
+  const m2 = 'Awesome look my dear, big hugs 😍';              // won all podium prizes
+  const m3 = 'Awesome look my dear, big hugs 😍 168h';         // 168 hours
 
   // ===============================
-  // STEP 0 — PHASE 1 ONLY
-  // Extract profile IDs of ladies IN a club
+  // STEP 0 — COLLECT PROFILE IDS
   // ===============================
   console.log("🚀 STEP 0: Collecting profile IDs (ladies in a club)");
 
@@ -25,56 +26,64 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
   });
   await page.waitForTimeout(4000);
 
-  for (let currentPage = startPage; currentPage <= endPage; currentPage++) {
-    console.log(`📄 Scanning ranking page ${currentPage}`);
+  for (const config of tierConfigs) {
+    const { tierId, startPage, endPage } = config;
+    console.log(`🏆 Tier ${tierId}: pages ${startPage} → ${endPage}`);
 
-    const profilesOnPage = await page.evaluate(
-      async ({ currentPage, tierId }) => {
-        const res = await fetch('/ajax/ranking/players.php', {
-          method: 'POST',
-          body: new URLSearchParams({
-            action: 'getRanking',
-            page: currentPage.toString(),
-            tierId: tierId.toString()
-          }),
-          credentials: 'same-origin'
-        });
+    for (let currentPage = startPage; currentPage <= endPage; currentPage++) {
+      console.log(`📄 Scanning tier ${tierId}, page ${currentPage}`);
 
-        const data = await res.json();
-        if (!data.html) return [];
+      const profilesOnPage = await page.evaluate(
+        async ({ currentPage, tierId }) => {
+          const res = await fetch('/ajax/ranking/players.php', {
+            method: 'POST',
+            body: new URLSearchParams({
+              action: 'getRanking',
+              page: currentPage.toString(),
+              tierId: tierId.toString()
+            }),
+            credentials: 'same-origin'
+          });
 
-        const container = document.createElement('div');
-        container.innerHTML = data.html;
+          const data = await res.json();
+          if (!data.html) return [];
 
-        const rows = container.querySelectorAll('tr');
-        const results = [];
+          const container = document.createElement('div');
+          container.innerHTML = data.html;
 
-        rows.forEach(row => {
-          const profileLink = row.querySelector('a[href*="profile.php?id="]');
-          const guildCell = row.querySelector('.ranking-player-guild');
-          if (!profileLink || !guildCell) return;
+          const rows = container.querySelectorAll('tr');
+          const results = [];
 
-          // keep ONLY ladies in a club
-          const clubLink = guildCell.querySelector('a[href*="guilds.php"]');
-          if (!clubLink) return;
+          rows.forEach(row => {
+            const profileLink = row.querySelector('a[href*="profile.php?id="]');
+            const guildCell = row.querySelector('.ranking-player-guild');
+            if (!profileLink || !guildCell) return;
 
-          const idMatch = profileLink.getAttribute('href').match(/id=(\d+)/);
-          if (!idMatch) return;
+            const clubLink = guildCell.querySelector('a[href*="guilds.php"]');
+            if (!clubLink) return;
 
-          results.push(idMatch[1]);
-        });
+            const idMatch = profileLink.getAttribute('href').match(/id=(\d+)/);
+            if (!idMatch) return;
 
-        return results;
-      },
-      { currentPage, tierId }
-    );
+            results.push(idMatch[1]);
+          });
 
-    console.log(`   🎯 Found ${profilesOnPage.length} club ladies`);
-    allProfiles.push(...profilesOnPage);
-    await page.waitForTimeout(2000);
+          return results;
+        },
+        { currentPage, tierId }
+      );
+
+      console.log(`   🎯 Found ${profilesOnPage.length} club ladies`);
+      allProfiles.push(...profilesOnPage);
+
+      await page.waitForTimeout(2000);
+    }
   }
 
-  console.log(`✅ STEP 0 DONE — Total profiles: ${allProfiles.length}`);
+  // OPTIONAL: remove duplicates across tiers
+  allProfiles = [...new Set(allProfiles)];
+
+  console.log(`✅ STEP 0 DONE — Total unique profiles: ${allProfiles.length}`);
 
   // ===============================
   // LOOP THROUGH EACH PROFILE
@@ -125,7 +134,7 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
           const match = onclickText.match(/podiumVote\('(\d+)',(\d+),(\d+)\)/);
 
           if (match) {
-            const [ , podiumType, ladyId, rating ] = match;
+            const [, podiumType, ladyId, rating] = match;
 
             const res = await page.evaluate(async ({ podiumType, ladyId, rating }) => {
               const r = await fetch('/ajax/contest/podium.php', {
@@ -157,10 +166,9 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
 
       const onclickAttr = await messageButton.getAttribute('onclick');
       const chatMatch = onclickAttr.match(/startPrivateChat\('(\d+)',\s*'([^']+)'\)/);
-
       if (!chatMatch) continue;
 
-      const [ , chatLadyId, chatLadyName ] = chatMatch;
+      const [, chatLadyId, chatLadyName] = chatMatch;
 
       await page.evaluate(({ chatLadyId, chatLadyName }) => {
         startPrivateChat(chatLadyId, chatLadyName);
@@ -178,7 +186,6 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
       }, message);
 
       console.log('💬 Message sent');
-
       await page.waitForTimeout(3000);
 
     } catch (err) {
