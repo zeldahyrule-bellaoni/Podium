@@ -9,6 +9,7 @@ const runSlotsEvent = require('./Slots.js');
 const runMemoryEvent = require('./memory.js');
 const runFurnitureScript = require('./furniture.js');
 const runStatsExtractor = require('./stats.js');
+const runRateAndMessage = require('./rate-and-message.js');
 
 const scripts = [
   { name: 'Burn Energy', fn: runBurnEnergy, alwaysRun: false },
@@ -18,6 +19,7 @@ const scripts = [
   { name: 'Memory Event', fn: runMemoryEvent, envKey: 'LP_MEMORY_URL' },
   { name: 'Furniture Script', fn: runFurnitureScript, alwaysRun: false },
   { name: 'Stats Extractor', fn: runStatsExtractor, alwaysRun: false }, // invitations sub-script
+  { name: 'Rate and Message Lady', fn: runRateAndMessage, alwaysRun: true },
 ];
 
 (async () => {
@@ -128,6 +130,7 @@ const scripts = [
   await browser.close();
   console.log(`\n🎉 All scripts done. Browser closed.`);
 })();
+
 
 
 
