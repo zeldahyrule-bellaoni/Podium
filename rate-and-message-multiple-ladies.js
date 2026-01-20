@@ -5,6 +5,7 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
   // CONFIG (EDIT MANUALLY)
   // ===============================
   const tierConfigs = [
+    { tierId: 3, startPage: 1, endPage: 1 },
     { tierId: 2, startPage: 1, endPage: 1 },
     // { tierId: 9, startPage: 1, endPage: 3 },
   ];
