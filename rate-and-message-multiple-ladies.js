@@ -5,18 +5,17 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
   // CONFIG (EDIT MANUALLY)
   // ===============================
   const tierConfigs = [
-    //{ tierId: 10, startPage: 8, endPage: 293 },
+    //{ tierId: 10, startPage: 7, endPage: 293 },
     //{ tierId: 9,  startPage: 1, endPage: 87 },
     //{ tierId: 8,  startPage: 1, endPage: 90 },
     //{ tierId: 7,  startPage: 1, endPage: 127 },
-    { tierId: 5, startPage: 8, endPage: 293 },
+    { tierId: 1,  startPage: 1, endPage: 2 },
   ];
 
   // ❌ Profiles you NEVER want to visit / rate / message
   const excludedProfileIds = [
     '5770038','4904513','8523231','8523270','8523871','8523849','8524213',
-    '11266738','5640193','5780987','8538377','5784006','2914453','8518270','11242935',
-    '11202494',
+    '11266738','5640193','5780987','8538377','5784006','2914453','8518270','11242935','10948218',
   ];
 
   const m1 = 'Awesome look my dear, max stars and big hugs 😍';
@@ -75,7 +74,7 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
             const idMatch = profileLink.getAttribute('href').match(/id=(\d+)/);
             if (!idMatch) return;
 
-            results.push(idMatch[1]); // string
+            results.push(idMatch[1]); // keep as string
           });
 
           return results;
@@ -91,12 +90,13 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
   }
 
   allProfiles = [...new Set(allProfiles)]; // remove duplicates
+  allProfiles = allProfiles.map(String);   // ensure all strings
   console.log(`📊 Profiles before exclusion: ${allProfiles.length}`);
 
   // ===============================
   // STEP 0.5 — EXCLUDE MANUAL IDS
   // ===============================
-  const excludedSet = new Set(excludedProfileIds);
+  const excludedSet = new Set(excludedProfileIds.map(String));
   const actuallyExcluded = allProfiles.filter(id => excludedSet.has(id));
   allProfiles = allProfiles.filter(id => !excludedSet.has(id));
 
