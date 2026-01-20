@@ -15,20 +15,20 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
 
   // ❌ Profiles you NEVER want to visit / rate / message
   const excludedProfileIds = [
-    '5770038', //bella
-    '4904513', //QoO
-    '8523231', //her majesty
-    '8523270', //felis
-    '8523871', //wildrose
-    '8523849', //agentx
-    '8524213', //giggles
+    '7709322', //bella...
+    //'4904513', //QoO
+    '11264860', //her majesty
+    '11264915', //felis
+    '11265728', //wildrose
+    '11265695', //agentx
+    '11266176', //giggles
     '11266738', //nina
-    '5640193', //oni
-    '5780987', //zelda
-    '8538377', //indila
-    '5784006', //pania
-    '2914453', //shenhe
-    '8518270', //dd
+    '6597974', //oni...
+    '7722810', //zelda...
+    '7550302', //indila...
+    '11285359', //pania
+    '11258511', //shenhe
+    '2914453', //dd
   ];
 
   const m1 = 'Awesome look my dear, max stars and big hugs 😍';
