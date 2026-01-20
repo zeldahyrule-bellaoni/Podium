@@ -7,9 +7,9 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
   const endPage = 2;
   const tierId = 10;
 
-  const m1 = 'Hello! Great profile 👑'; // rating message
-  const m2 = 'Just stopping by to say hi 👋'; // won all podium prizes
-  const m3 = 'Visited your profile 😉'; // 168 hours
+  const m1 = 'Awesome look my dear, max stars and big hugs 😍'; // rating message
+  const m2 = 'Awesome look my dear, big hugs 😍'; // won all podium prizes
+  const m3 = 'Awesome look my dear, big hugs 😍 168h'; // 168 hours
 
   // ===============================
   // STEP 0 — PHASE 1 ONLY
