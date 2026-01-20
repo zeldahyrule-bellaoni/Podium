@@ -18,7 +18,7 @@ const scripts = [
   { name: 'Slots Event', fn: runSlotsEvent, envKey: 'LP_SLOTS_URL' },
   { name: 'Memory Event', fn: runMemoryEvent, envKey: 'LP_MEMORY_URL' },
   { name: 'Furniture Script', fn: runFurnitureScript, alwaysRun: false },
-  { name: 'Stats Extractor', fn: runStatsExtractor, alwaysRun: false }, // invitations sub-script, but collects ladies who are already in a club.
+  { name: 'Stats Extractor', fn: runStatsExtractor, alwaysRun: true }, // invitations sub-script, but collects ladies who are already in a club.
   { name: 'Rate and Message Lady', fn: runRateAndMessage, alwaysRun: true },
 ];
 
@@ -130,6 +130,7 @@ const scripts = [
   await browser.close();
   console.log(`\n🎉 All scripts done. Browser closed.`);
 })();
+
 
 
 
