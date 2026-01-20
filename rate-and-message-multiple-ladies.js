@@ -10,6 +10,7 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
     //{ tierId: 8,  startPage: 1, endPage: 90 },
     //{ tierId: 7,  startPage: 1, endPage: 127 },
     { tierId: 1,  startPage: 1, endPage: 2 },
+    { tierId: 2,  startPage: 1, endPage: 2 },
   ];
 
   // ❌ Profiles you NEVER want to visit / rate / message
