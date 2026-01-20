@@ -5,16 +5,18 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
   // CONFIG (EDIT MANUALLY)
   // ===============================
   const tierConfigs = [
-    { tierId: 10, startPage: 7, endPage: 293 },
-    { tierId: 9,  startPage: 1, endPage: 87 },
-    { tierId: 8,  startPage: 1, endPage: 90 },
-    { tierId: 7,  startPage: 1, endPage: 127 },
+    //{ tierId: 10, startPage: 8, endPage: 293 },
+    //{ tierId: 9,  startPage: 1, endPage: 87 },
+    //{ tierId: 8,  startPage: 1, endPage: 90 },
+    //{ tierId: 7,  startPage: 1, endPage: 127 },
+    { tierId: 5, startPage: 8, endPage: 293 },
   ];
 
   // ❌ Profiles you NEVER want to visit / rate / message
   const excludedProfileIds = [
     '5770038','4904513','8523231','8523270','8523871','8523849','8524213',
     '11266738','5640193','5780987','8538377','5784006','2914453','8518270','11242935',
+    '11202494',
   ];
 
   const m1 = 'Awesome look my dear, max stars and big hugs 😍';
