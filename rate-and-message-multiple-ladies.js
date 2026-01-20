@@ -5,30 +5,27 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
   // CONFIG (EDIT MANUALLY)
   // ===============================
   const tierConfigs = [
-    //{ tierId: 10, startPage: 7, endPage: 293 },
-    //{ tierId: 9,  startPage: 1, endPage: 87 },
-    //{ tierId: 8,  startPage: 1, endPage: 90 },
-    //{ tierId: 7,  startPage: 1, endPage: 127 },
-    { tierId: 1,  startPage: 1, endPage: 2 },
-    { tierId: 2,  startPage: 1, endPage: 2 },
+    { tierId: 10, startPage: 8, endPage: 293 },
+    { tierId: 9,  startPage: 1, endPage: 87 },
+    { tierId: 8,  startPage: 1, endPage: 90 },
+    { tierId: 7,  startPage: 1, endPage: 127 },
   ];
 
-  // ❌ Profiles you NEVER want to visit / rate / message
+  // ❌ Profiles you NEVER want to visit / rate / message (YOUR OWN IDS)
   const excludedProfileIds = [
-    '7709322', //bella...
-    //'4904513', //QoO
-    '11264860', //her majesty
-    '11264915', //felis
-    '11265728', //wildrose
-    '11265695', //agentx
-    '11266176', //giggles
-    '11266738', //nina
-    '6597974', //oni...
-    '7722810', //zelda...
-    '7550302', //indila...
-    '11285359', //pania
-    '11258511', //shenhe
-    '2914453', //dd
+    '7709322',   // bella
+    '11264860', // her majesty
+    '11264915', // felis
+    '11265728', // wildrose
+    '11265695', // agentx
+    '11266176', // giggles
+    '11266738', // nina
+    '6597974',  // oni
+    '7722810',  // zelda
+    '7550302',  // indila
+    '11285359', // pania
+    '11258511', // shenhe
+    '2914453',  // dd
   ];
 
   const m1 = 'Awesome look my dear, max stars and big hugs 😍';
@@ -46,7 +43,7 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
     waitUntil: 'domcontentloaded',
     timeout: 60000
   });
-  await page.waitForTimeout(2000); // reduced from 4000ms
+  await page.waitForTimeout(2000);
 
   for (const config of tierConfigs) {
     const { tierId, startPage, endPage } = config;
@@ -87,7 +84,7 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
             const idMatch = profileLink.getAttribute('href').match(/id=(\d+)/);
             if (!idMatch) return;
 
-            results.push(idMatch[1]); // keep as string
+            results.push(idMatch[1]);
           });
 
           return results;
@@ -98,12 +95,12 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
       console.log(`   🎯 Found ${profilesOnPage.length} club ladies`);
       allProfiles.push(...profilesOnPage);
 
-      await page.waitForTimeout(700); // reduced from 2000ms
+      await page.waitForTimeout(700);
     }
   }
 
-  allProfiles = [...new Set(allProfiles)]; // remove duplicates
-  allProfiles = allProfiles.map(String);   // ensure all strings
+  // Deduplicate + normalize
+  allProfiles = [...new Set(allProfiles)].map(String);
   console.log(`📊 Profiles before exclusion: ${allProfiles.length}`);
 
   // ===============================
@@ -119,6 +116,21 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
   }
 
   console.log(`✅ STEP 0 DONE — Profiles after exclusion: ${allProfiles.length}`);
+
+  // ===============================
+  // 🛑 SAFETY CHECK — PREVENT SELF-VOTING
+  // ===============================
+  const MIN_REQUIRED_EXCLUSIONS = 4;
+
+  if (actuallyExcluded.length < MIN_REQUIRED_EXCLUSIONS) {
+    console.error('🛑 SAFETY STOP TRIGGERED 🛑');
+    console.error(
+      `Expected at least ${MIN_REQUIRED_EXCLUSIONS} excluded profiles, ` +
+      `but only ${actuallyExcluded.length} were excluded.`
+    );
+    console.error('Exclusion likely failed. Script aborted to prevent self-voting.');
+    return; // ⛔ HARD STOP
+  }
 
   // ===============================
   // LOOP THROUGH EACH PROFILE
@@ -137,7 +149,7 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
         waitUntil: 'domcontentloaded',
         timeout: 60000
       });
-      await page.waitForTimeout(2000); // reduced from 4000ms
+      await page.waitForTimeout(2000);
 
       // ===============================
       // STEP 2 — DETERMINE CASE
@@ -172,7 +184,12 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
               const r = await fetch('/ajax/contest/podium.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({ action: 'vote', podiumType, ladyId, rating })
+                body: new URLSearchParams({
+                  action: 'vote',
+                  podiumType,
+                  ladyId,
+                  rating
+                })
               });
               return await r.json();
             }, { podiumType, ladyId, rating });
@@ -199,9 +216,11 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
         startPrivateChat(chatLadyId, chatLadyName);
       }, { chatLadyId, chatLadyName });
 
-      await page.waitForTimeout(1200); // reduced from 3000ms
+      await page.waitForTimeout(1200);
 
-      const message = caseType === 'case1' ? m1 : caseType === 'case2' ? m2 : m3;
+      const message =
+        caseType === 'case1' ? m1 :
+        caseType === 'case2' ? m2 : m3;
 
       await page.evaluate(msg => {
         document.getElementById('msgArea').value = msg;
@@ -209,7 +228,7 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
       }, message);
 
       console.log('💬 Message sent');
-      await page.waitForTimeout(1200); // reduced from 3000ms
+      await page.waitForTimeout(1200);
 
     } catch (err) {
       console.log(`❌ Error on profile ${profileId}: ${err.message}`);
