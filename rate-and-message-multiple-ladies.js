@@ -5,22 +5,21 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
   // CONFIG (EDIT MANUALLY)
   // ===============================
   const tierConfigs = [
-    { tierId: 10, startPage: 1, endPage: 293 },
-    { tierId: 9, startPage: 1, endPage: 87 },
-    { tierId: 8, startPage: 1, endPage: 90 },
-    { tierId: 7, startPage: 1, endPage: 127 },
-    // { tierId: 9, startPage: 1, endPage: 3 },
+    { tierId: 10, startPage: 7, endPage: 293 },
+    { tierId: 9,  startPage: 1, endPage: 87 },
+    { tierId: 8,  startPage: 1, endPage: 90 },
+    { tierId: 7,  startPage: 1, endPage: 127 },
   ];
 
   // ❌ Profiles you NEVER want to visit / rate / message
   const excludedProfileIds = [
-    '5770038','4904513','8523231','8523270','8523871','8523849','8524213','11266738','5640193','5780987','8538377','5784006','2914453','8518270','11242935',
-    // '99887766',
+    '5770038','4904513','8523231','8523270','8523871','8523849','8524213',
+    '11266738','5640193','5780987','8538377','5784006','2914453','8518270','11242935',
   ];
 
-  const m1 = 'Awesome look my dear, max stars and big hugs 😍'; // rating message
-  const m2 = 'Awesome look my dear, big hugs 😍';              // won all podium prizes
-  const m3 = 'Awesome look my dear, big hugs 😍 168h';         // 168 hours
+  const m1 = 'Awesome look my dear, max stars and big hugs 😍';
+  const m2 = 'Awesome look my dear, big hugs 😍';
+  const m3 = 'Awesome look my dear, big hugs 😍 168h';
 
   // ===============================
   // STEP 0 — COLLECT PROFILE IDS
@@ -33,7 +32,7 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
     waitUntil: 'domcontentloaded',
     timeout: 60000
   });
-  await page.waitForTimeout(4000);
+  await page.waitForTimeout(2000); // reduced from 4000ms
 
   for (const config of tierConfigs) {
     const { tierId, startPage, endPage } = config;
@@ -74,7 +73,7 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
             const idMatch = profileLink.getAttribute('href').match(/id=(\d+)/);
             if (!idMatch) return;
 
-            results.push(idMatch[1]);
+            results.push(idMatch[1]); // string
           });
 
           return results;
@@ -85,23 +84,23 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
       console.log(`   🎯 Found ${profilesOnPage.length} club ladies`);
       allProfiles.push(...profilesOnPage);
 
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(700); // reduced from 2000ms
     }
   }
 
-  // Remove duplicates across tiers
-  allProfiles = [...new Set(allProfiles)];
-
+  allProfiles = [...new Set(allProfiles)]; // remove duplicates
   console.log(`📊 Profiles before exclusion: ${allProfiles.length}`);
 
   // ===============================
   // STEP 0.5 — EXCLUDE MANUAL IDS
   // ===============================
-  if (excludedProfileIds.length > 0) {
-    allProfiles = allProfiles.filter(
-      id => !excludedProfileIds.includes(id)
-    );
-    console.log(`🚫 Excluded ${excludedProfileIds.length} profile(s)`);
+  const excludedSet = new Set(excludedProfileIds);
+  const actuallyExcluded = allProfiles.filter(id => excludedSet.has(id));
+  allProfiles = allProfiles.filter(id => !excludedSet.has(id));
+
+  console.log(`🚫 Excluded ${actuallyExcluded.length} profile(s) from list`);
+  if (actuallyExcluded.length > 0) {
+    console.log('   🔹 Excluded IDs:', actuallyExcluded.join(', '));
   }
 
   console.log(`✅ STEP 0 DONE — Profiles after exclusion: ${allProfiles.length}`);
@@ -123,7 +122,7 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
         waitUntil: 'domcontentloaded',
         timeout: 60000
       });
-      await page.waitForTimeout(4000);
+      await page.waitForTimeout(2000); // reduced from 4000ms
 
       // ===============================
       // STEP 2 — DETERMINE CASE
@@ -134,11 +133,8 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
         .textContent()
         .catch(() => '');
 
-      if (alreadyVotedText.includes('won all podium prizes')) {
-        caseType = 'case2';
-      } else if (alreadyVotedText.includes('already 3 votes')) {
-        caseType = 'case3';
-      }
+      if (alreadyVotedText.includes('won all podium prizes')) caseType = 'case2';
+      else if (alreadyVotedText.includes('already 3 votes')) caseType = 'case3';
 
       console.log(`📌 Case detected: ${caseType}`);
 
@@ -161,19 +157,12 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
               const r = await fetch('/ajax/contest/podium.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({
-                  action: 'vote',
-                  podiumType,
-                  ladyId,
-                  rating
-                })
+                body: new URLSearchParams({ action: 'vote', podiumType, ladyId, rating })
               });
               return await r.json();
             }, { podiumType, ladyId, rating });
 
-            if (res.status === 1) {
-              console.log('✅ Rating successful');
-            }
+            if (res.status === 1) console.log('✅ Rating successful');
           }
         }
       }
@@ -195,11 +184,9 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
         startPrivateChat(chatLadyId, chatLadyName);
       }, { chatLadyId, chatLadyName });
 
-      await page.waitForTimeout(3000);
+      await page.waitForTimeout(1200); // reduced from 3000ms
 
-      const message =
-        caseType === 'case1' ? m1 :
-        caseType === 'case2' ? m2 : m3;
+      const message = caseType === 'case1' ? m1 : caseType === 'case2' ? m2 : m3;
 
       await page.evaluate(msg => {
         document.getElementById('msgArea').value = msg;
@@ -207,7 +194,7 @@ module.exports = async function runRateAndMessageMultipleLadies(page) {
       }, message);
 
       console.log('💬 Message sent');
-      await page.waitForTimeout(3000);
+      await page.waitForTimeout(1200); // reduced from 3000ms
 
     } catch (err) {
       console.log(`❌ Error on profile ${profileId}: ${err.message}`);
