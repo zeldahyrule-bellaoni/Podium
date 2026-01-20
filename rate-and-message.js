@@ -1,6 +1,6 @@
 module.exports = async function rateAndMessageLady(page) {
   // ⬅️ Update these manually in the code
-  const ladyProfileUrl = 'https://v3.g.ladypopular.com/profile.php?lady_id=4904513';
+  const ladyProfileUrl = 'https://v3.g.ladypopular.com/profile.php?id=11265638';
   const m1 = 'Hello! Great profile 👑';          // Message for case 1
   const m2 = 'Just stopping by to say hi 👋';     // Message for case 2
   const m3 = 'Visited your profile 😉';           // Message for case 3
