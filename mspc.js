@@ -10,6 +10,7 @@ const runMemoryEvent = require('./memory.js');
 const runFurnitureScript = require('./furniture.js');
 const runStatsExtractor = require('./stats.js');
 const runRateAndMessage = require('./rate-and-message.js');
+const runRateAndMessageMultipleLadies = require('./rate-and-message-multiple-ladies.js');
 
 const scripts = [
   { name: 'Burn Energy', fn: runBurnEnergy, alwaysRun: false },
@@ -18,8 +19,9 @@ const scripts = [
   { name: 'Slots Event', fn: runSlotsEvent, envKey: 'LP_SLOTS_URL' },
   { name: 'Memory Event', fn: runMemoryEvent, envKey: 'LP_MEMORY_URL' },
   { name: 'Furniture Script', fn: runFurnitureScript, alwaysRun: false },
-  { name: 'Stats Extractor', fn: runStatsExtractor, alwaysRun: true }, // invitations sub-script, but collects ladies who are already in a club.
-  { name: 'Rate and Message Lady', fn: runRateAndMessage, alwaysRun: true },
+  { name: 'Stats Extractor', fn: runStatsExtractor, alwaysRun: false }, // invitations sub-script, but collects info of ladies who are already in a club.
+  { name: 'Rate and Message Lady', fn: runRateAndMessage, alwaysRun: false }, // visits, rates and messages 1 lady.
+  { name: 'Rate & Message Club Ladies', fn: runRateAndMessageMultipleLadies, alwaysRun: true },
 ];
 
 (async () => {
@@ -130,6 +132,7 @@ const scripts = [
   await browser.close();
   console.log(`\n🎉 All scripts done. Browser closed.`);
 })();
+
 
 
 
