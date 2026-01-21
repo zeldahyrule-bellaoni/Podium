@@ -18,20 +18,22 @@ module.exports = async function runPodium(page) {
 
   // INPUT 1 — Tier & Page Ranges
   const TIERS = [
-    { tierId: 10, startPage: 1, endPage: 2 },
-    { tierId: 9,  startPage: 1, endPage: 1 },
-    { tierId: 8,  startPage: 1, endPage: 1 },
-    { tierId: 7,  startPage: 1, endPage: 1 },
+    //{ tierId: 10, startPage: 1, endPage: 2 },
+    //{ tierId: 9,  startPage: 1, endPage: 1 },
+    //{ tierId: 8,  startPage: 1, endPage: 1 },
+    //{ tierId: 7,  startPage: 1, endPage: 1 },
+    { tierId: 1,  startPage: 1, endPage: 2 },
+    { tierId: 2,  startPage: 1, endPage: 1 },
   ];
 
   // INPUT 2 — Exclusion Set (own accounts)
   const EXCLUDED = {
     ids: new Set([
-      123456,
+      6520966, //katarina tier1, rank 7
       789012,
     ]),
     names: new Set([
-      'MyAlt1',
+      'Brenda Walsh',
       'MyAlt2',
     ])
   };
