@@ -1,5 +1,5 @@
 /**
- * Rate & Message Ladies Script
+ * Rate & Message Ladies Script (Podium)
  * ----------------------------------------
  * - Iterates through tierIds and page ranges (manual input)
  * - Fetches ranking pages via internal POST (no clicks)
@@ -7,7 +7,7 @@
  * - Applies eligibility checks
  * - Rates via internal POST (6 → 3)
  * - Categorizes lady (Type 1 / Type 2)
- * - Opens private chat & sends message (no clicks)
+ * - Opens private chat & sends message
  */
 
 module.exports = async function runPodium(page) {
@@ -18,18 +18,14 @@ module.exports = async function runPodium(page) {
 
   // INPUT 1 — Tier & Page Ranges
   const TIERS = [
-    //{ tierId: 10, startPage: 1, endPage: 2 },
-    //{ tierId: 9,  startPage: 1, endPage: 1 },
-    //{ tierId: 8,  startPage: 1, endPage: 1 },
-    //{ tierId: 7,  startPage: 1, endPage: 1 },
-    { tierId: 1,  startPage: 1, endPage: 2 },
-    { tierId: 2,  startPage: 1, endPage: 1 },
+    { tierId: 1, startPage: 1, endPage: 2 },
+    { tierId: 2, startPage: 1, endPage: 1 },
   ];
 
-  // INPUT 2 — Exclusion Set (own accounts)
+  // INPUT 2 — Exclusion Set (own / protected accounts)
   const EXCLUDED = {
     ids: new Set([
-      6520966, //katarina tier1, rank 7
+      6520966, // Katarina L.
       789012,
     ]),
     names: new Set([
@@ -45,11 +41,13 @@ module.exports = async function runPodium(page) {
   // Rating attempts (max → min)
   const RATING_ATTEMPTS = [6, 5, 4, 3];
 
-  // Small random delay helper (speed + disguise)
+  // Small random delay helper
   const randomDelay = async (min = 300, max = 900) => {
     const delay = Math.floor(Math.random() * (max - min + 1)) + min;
     await page.waitForTimeout(delay);
   };
+
+  console.log("🚀 Podium script started");
 
   // =========================
   // STEP 1–8 — MAIN FLOW
@@ -60,7 +58,7 @@ module.exports = async function runPodium(page) {
 
     for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
 
-      // STEP 2 — Fetch ranking page (internal POST)
+      // STEP 2 — Fetch ranking page (SAFE JSON PARSE)
       const rankingRes = await page.evaluate(async ({ tierId, pageNum }) => {
         const res = await fetch('/ajax/ranking/players.php', {
           method: 'POST',
@@ -75,15 +73,23 @@ module.exports = async function runPodium(page) {
             page: pageNum,
           }),
         });
-        return await res.json();
+
+        const text = await res.text();
+
+        try {
+          return JSON.parse(text);
+        } catch {
+          return { error: true, raw: text };
+        }
       }, { tierId, pageNum });
 
-      if (!rankingRes?.html) {
-        console.log(`⚠️ Tier ${tierId} Page ${pageNum}: No HTML returned`);
+      if (rankingRes?.error || !rankingRes?.html) {
+        console.log(`⚠️ Tier ${tierId} Page ${pageNum}: Invalid or empty response`);
+        await randomDelay(2000, 3500);
         continue;
       }
 
-      // STEP 3 — Parse 20 ladies from HTML
+      // STEP 3 — Parse ladies from HTML
       const ladies = await page.evaluate((html) => {
         const container = document.createElement('div');
         container.innerHTML = html;
@@ -108,10 +114,10 @@ module.exports = async function runPodium(page) {
         }).filter(Boolean);
       }, rankingRes.html);
 
-      // STEP 6 — Loop all 20 ladies
+      // STEP 4–7 — Process each lady
       for (const lady of ladies) {
 
-        // Eligibility checks (STEP 3)
+        // Eligibility checks
         let eligible = true;
         if (!lady.inGuild) eligible = false;
         if (EXCLUDED.ids.has(lady.ladyId) || EXCLUDED.names.has(lady.name)) {
@@ -124,7 +130,7 @@ module.exports = async function runPodium(page) {
 
         if (eligible) {
 
-          // STEP 4 — Rate (internal POST, blind max-first)
+          // STEP 4 — Rate (internal POST)
           for (const rating of RATING_ATTEMPTS) {
             const voteRes = await page.evaluate(async ({ ladyId, rating }) => {
               const res = await fetch('/ajax/contest/podium.php', {
@@ -141,7 +147,13 @@ module.exports = async function runPodium(page) {
                   rating,
                 }),
               });
-              return await res.json();
+
+              const text = await res.text();
+              try {
+                return JSON.parse(text);
+              } catch {
+                return { error: true };
+              }
             }, { ladyId: lady.ladyId, rating });
 
             if (voteRes?.status === 1) {
@@ -178,7 +190,7 @@ module.exports = async function runPodium(page) {
           }
         }
 
-        // Compact single log per lady
+        // STEP 8 — Log result
         console.log(
           `👩 ${lady.name} (${lady.ladyId}) | Guild: ${lady.inGuild ? 'Y' : 'N'} | ` +
           `Type: ${ladyType} | Rated: ${rated ? 'Y' : 'N'} | Msg: ${messageSent ? 'Y' : 'N'}`
@@ -189,5 +201,5 @@ module.exports = async function runPodium(page) {
     }
   }
 
-  console.log("🎉 Rate & Message script completed.");
+  console.log("🎉 Podium script completed.");
 };
