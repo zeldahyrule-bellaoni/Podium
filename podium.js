@@ -18,8 +18,8 @@ module.exports = async function runPodium(page) {
 
   // INPUT 1 — Tier & Page Ranges
   const TIERS = [
-    { tierId: 1, startPage: 1, endPage: 2 },
-    { tierId: 2, startPage: 1, endPage: 1 },
+    { tierId: 10, startPage: 1, endPage: 10 },
+    //{ tierId: 2, startPage: 1, endPage: 1 },
   ];
 
   // INPUT 2 — Exclusion Set (own / protected accounts)
