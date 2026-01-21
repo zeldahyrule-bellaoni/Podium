@@ -1,0 +1,191 @@
+/**
+ * Rate & Message Ladies Script
+ * ----------------------------------------
+ * - Iterates through tierIds and page ranges (manual input)
+ * - Fetches ranking pages via internal POST (no clicks)
+ * - Extracts lady info from returned HTML
+ * - Applies eligibility checks
+ * - Rates via internal POST (6 → 3)
+ * - Categorizes lady (Type 1 / Type 2)
+ * - Opens private chat & sends message (no clicks)
+ */
+
+module.exports = async function runPodium(page) {
+
+  // =========================
+  // STEP 0 — MANUAL INPUTS
+  // =========================
+
+  // INPUT 1 — Tier & Page Ranges
+  const TIERS = [
+    { tierId: 10, startPage: 1, endPage: 2 },
+    { tierId: 9,  startPage: 1, endPage: 1 },
+    { tierId: 8,  startPage: 1, endPage: 1 },
+    { tierId: 7,  startPage: 1, endPage: 1 },
+  ];
+
+  // INPUT 2 — Exclusion Set (own accounts)
+  const EXCLUDED = {
+    ids: new Set([
+      123456,
+      789012,
+    ]),
+    names: new Set([
+      'MyAlt1',
+      'MyAlt2',
+    ])
+  };
+
+  // INPUT 3 — Messages
+  const m1 = "Hey 😊 I rated you! Would love a return rating 💖";
+  const m2 = "Hi there 🌸 left you a rating!";
+
+  // Rating attempts (max → min)
+  const RATING_ATTEMPTS = [6, 5, 4, 3];
+
+  // Small random delay helper (speed + disguise)
+  const randomDelay = async (min = 300, max = 900) => {
+    const delay = Math.floor(Math.random() * (max - min + 1)) + min;
+    await page.waitForTimeout(delay);
+  };
+
+  // =========================
+  // STEP 1–8 — MAIN FLOW
+  // =========================
+
+  for (const { tierId, startPage, endPage } of TIERS) {
+    console.log(`🏷️ Tier ${tierId} | Pages ${startPage} → ${endPage}`);
+
+    for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
+
+      // STEP 2 — Fetch ranking page (internal POST)
+      const rankingRes = await page.evaluate(async ({ tierId, pageNum }) => {
+        const res = await fetch('/ajax/ranking/players.php', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest',
+          },
+          body: new URLSearchParams({
+            action: 'getRanking',
+            tierId,
+            page: pageNum,
+          }),
+        });
+        return await res.json();
+      }, { tierId, pageNum });
+
+      if (!rankingRes?.html) {
+        console.log(`⚠️ Tier ${tierId} Page ${pageNum}: No HTML returned`);
+        continue;
+      }
+
+      // STEP 3 — Parse 20 ladies from HTML
+      const ladies = await page.evaluate((html) => {
+        const container = document.createElement('div');
+        container.innerHTML = html;
+
+        const rows = [...container.querySelectorAll('tr[id^="num"]')];
+
+        return rows.map(row => {
+          const chatBtn = row.querySelector('button[onclick^="startPrivateChat"]');
+          if (!chatBtn) return null;
+
+          const onclick = chatBtn.getAttribute('onclick');
+          const match = onclick.match(/startPrivateChat\((\d+),\s*'([^']+)'\)/);
+          if (!match) return null;
+
+          const ladyId = parseInt(match[1], 10);
+          const name = match[2];
+
+          const guildCell = row.querySelector('.ranking-player-guild');
+          const inGuild = !!guildCell?.querySelector('a[href*="guilds.php"]');
+
+          return { ladyId, name, inGuild };
+        }).filter(Boolean);
+      }, rankingRes.html);
+
+      // STEP 6 — Loop all 20 ladies
+      for (const lady of ladies) {
+
+        // Eligibility checks (STEP 3)
+        let eligible = true;
+        if (!lady.inGuild) eligible = false;
+        if (EXCLUDED.ids.has(lady.ladyId) || EXCLUDED.names.has(lady.name)) {
+          eligible = false;
+        }
+
+        let ladyType = 'SKIPPED';
+        let rated = false;
+        let messageSent = false;
+
+        if (eligible) {
+
+          // STEP 4 — Rate (internal POST, blind max-first)
+          for (const rating of RATING_ATTEMPTS) {
+            const voteRes = await page.evaluate(async ({ ladyId, rating }) => {
+              const res = await fetch('/ajax/contest/podium.php', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded',
+                  'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: new URLSearchParams({
+                  action: 'vote',
+                  podiumType: 4,
+                  ladyId,
+                  rating,
+                }),
+              });
+              return await res.json();
+            }, { ladyId: lady.ladyId, rating });
+
+            if (voteRes?.status === 1) {
+              rated = true;
+              ladyType = 'TYPE 1';
+              break;
+            }
+
+            await randomDelay(150, 300);
+          }
+
+          if (!rated) {
+            ladyType = 'TYPE 2';
+          }
+
+          // STEP 5 — Open chat & send message
+          try {
+            await page.evaluate(({ id, name }) => {
+              window.startPrivateChat(id, name);
+            }, { id: lady.ladyId, name: lady.name });
+
+            await page.waitForSelector('#msgArea', { timeout: 10000 });
+
+            const message = ladyType === 'TYPE 1' ? m1 : m2;
+
+            await page.evaluate((msg) => {
+              document.getElementById('msgArea').value = msg;
+              document.getElementById('_sendMessageButton').click();
+            }, message);
+
+            messageSent = true;
+          } catch {
+            messageSent = false;
+          }
+        }
+
+        // Compact single log per lady
+        console.log(
+          `👩 ${lady.name} (${lady.ladyId}) | Guild: ${lady.inGuild ? 'Y' : 'N'} | ` +
+          `Type: ${ladyType} | Rated: ${rated ? 'Y' : 'N'} | Msg: ${messageSent ? 'Y' : 'N'}`
+        );
+
+        await randomDelay();
+      }
+    }
+  }
+
+  console.log("🎉 Rate & Message script completed.");
+};
