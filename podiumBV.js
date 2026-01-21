@@ -35,7 +35,7 @@ module.exports = async function runPodiumBV(page) {
   // -----------------------------
   // 2️⃣ Message text
   // -----------------------------
-  const MESSAGE_TEXT = 'Hello!';
+  const MESSAGE_TEXT = 'Have a wonderful day my dear friend! Hugs   ฅ^•ﻌ•^ฅ';
 
   let index = 0;
 
