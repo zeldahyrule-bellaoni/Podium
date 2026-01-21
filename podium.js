@@ -192,8 +192,8 @@ module.exports = async function runPodium(page) {
 
         // STEP 8 — Log result
         console.log(
-          `👩 ${lady.name} (${lady.ladyId}) | Guild: ${lady.inGuild ? 'Y' : 'N'} | ` +
-          `Type: ${ladyType} | Rated: ${rated ? 'Y' : 'N'} | Msg: ${messageSent ? 'Y' : 'N'}`
+          `👩 ${lady.name} (${lady.ladyId}) | Guild: ${lady.inGuild ? '▶️' : 'N'} | ` +
+          `Type: ${ladyType} | Rated: ${rated ? '🟢' : 'N'} | Msg: ${messageSent ? '🟢' : 'N'}`
         );
 
         await randomDelay();
