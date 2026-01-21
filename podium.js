@@ -39,8 +39,8 @@ module.exports = async function runPodium(page) {
   };
 
   // INPUT 3 — Messages
-  const m1 = "Hey 😊 I rated you! Would love a return rating 💖";
-  const m2 = "Hi there 🌸 left you a rating!";
+  const m1 = "Hey 😊 I left start for you! 💖";
+  const m2 = "Hi there 🌸 visited you!";
 
   // Rating attempts (max → min)
   const RATING_ATTEMPTS = [6, 5, 4, 3];
