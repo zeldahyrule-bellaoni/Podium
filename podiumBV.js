@@ -38,7 +38,7 @@ module.exports = async function runPodiumBV(page) {
   // -----------------------------
   // 2️⃣ Hardcoded message text
   // -----------------------------
-  const messageText = "Hello!"; // <-- replace this with your actual message
+  const messageText = "Have a nice day!"; // <-- replace this with your actual message
 
   // -----------------------------
   // 3️⃣ Loop through ladies
