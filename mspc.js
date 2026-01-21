@@ -23,7 +23,7 @@ const scripts = [
   { name: 'Stats Extractor', fn: runStatsExtractor, alwaysRun: false }, // invitations sub-script, but collects info of ladies who are already in a club.
   { name: 'Rate and Message Lady', fn: runRateAndMessage, alwaysRun: false }, // visits, rates and messages 1 lady.
   { name: 'Rate & Message Club Ladies', fn: runRateAndMessageMultipleLadies, alwaysRun: false }, //perfect, but takes time 
-  { name: 'Podium', fn: runPodium, alwaysRun: true },
+  { name: 'Podium', fn: runPodium, alwaysRun: false }, // gets the info of guild-ladies in ~10 mins
 ];
 
 (async () => {
@@ -134,6 +134,7 @@ const scripts = [
   await browser.close();
   console.log(`\n🎉 All scripts done. Browser closed.`);
 })();
+
 
 
 
