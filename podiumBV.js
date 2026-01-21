@@ -38,7 +38,7 @@ module.exports = async function runPodiumBV(page) {
   // -----------------------------
   // 2️⃣ Hardcoded message text
   // -----------------------------
-  const messageText = "Have a nice day!"; // <-- replace this with your actual message
+  const messageText = "Hello!";
 
   // -----------------------------
   // 3️⃣ Loop through ladies
@@ -47,20 +47,20 @@ module.exports = async function runPodiumBV(page) {
 
   for (const lady of ladies) {
     count++;
-
-    let ratingStatus = '❌ Unavailable';
-    let successfulRating = null;
+    // Will log only once at the end of loop
+    let ratingResult = '❌ Rating unavailable';
+    let ratingValue = null;
     let messageResult = '❌ Message failed';
 
-    // -----------------------------
-    // STEP 1 — RATE LADY (6 → 3, quick succession)
-    // -----------------------------
-    const ratings = [6, 5, 4, 3];
-    const ratingPromises = [];
+    try {
+      // -----------------------------
+      // STEP 1 — RATE LADY (6 → 3, quick succession)
+      // -----------------------------
+      const ratings = [6, 5, 4, 3];
+      const ratingPromises = [];
 
-    for (const rating of ratings) {
-      ratingPromises.push(
-        page.evaluate(async ({ ladyId, rating }) => {
+      for (const rating of ratings) {
+        ratingPromises.push(page.evaluate(async ({ ladyId, rating }) => {
           const res = await fetch('https://v3.g.ladypopular.com/ajax/contest/podium.php', {
             method: 'POST',
             credentials: 'same-origin',
@@ -77,58 +77,63 @@ module.exports = async function runPodiumBV(page) {
           });
 
           try {
-            return { rating, ...(await res.json()) };
+            return { rating, ...await res.json() };
           } catch {
             return { rating, error: true };
           }
-        }, { ladyId: lady.ladyId, rating })
-      );
-    }
-
-    const results = await Promise.all(ratingPromises);
-    for (const r of results) {
-      if (r.status === 1) {
-        ratingStatus = '✅ Successful';
-        successfulRating = r.rating;
-        break; // take the first successful rating (max rating first)
+        }, { ladyId: lady.ladyId, rating }));
       }
+
+      const results = await Promise.all(ratingPromises);
+      const successObj = results.find(r => r.status === 1);
+      if (successObj) {
+        ratingResult = '✅ Successful';
+        ratingValue = successObj.rating;
+      }
+    } catch (err) {
+      ratingResult = `❌ Rating error: ${err.message}`;
     }
 
     // -----------------------------
     // STEP 2 — MESSAGE LADY
     // -----------------------------
     try {
-      // Open chat
+      // Open chat for the current lady
       await page.evaluate(({ ladyId, ladyName }) => {
         window.startPrivateChat(ladyId, ladyName);
       }, { ladyId: lady.ladyId, ladyName: lady.name });
 
-      // Short fixed wait to let chat switch
-      await page.waitForTimeout(100);
+      // Wait a fixed time for new chat elements to appear
+      await page.waitForTimeout(350);
 
-      // Type and send message
-      await page.evaluate((msg) => {
-        const area = document.getElementById('msgArea');
-        const sendBtn = document.getElementById('_sendMessageButton');
-        area.value = msg;
-        sendBtn.click();
-      }, messageText);
+      // Check if chat elements exist before typing
+      const msgAreaExists = await page.$('#msgArea');
+      const sendBtnExists = await page.$('#_sendMessageButton');
 
-      messageResult = '✅ Message sent';
+      if (msgAreaExists && sendBtnExists) {
+        await page.evaluate((msg) => {
+          const area = document.getElementById('msgArea');
+          const sendBtn = document.getElementById('_sendMessageButton');
+          area.value = msg;
+          sendBtn.click();
+        }, messageText);
+
+        messageResult = '✅ Message sent';
+      } else {
+        messageResult = '❌ Message failed: chat elements not found';
+      }
     } catch (err) {
       messageResult = `❌ Message failed: ${err.message}`;
     }
 
     // -----------------------------
-    // 4️⃣ Single console log per lady
+    // STEP 3 — Log results for this lady
     // -----------------------------
-    console.log(
-      `\n👩 ${count}. ${lady.name} (${lady.ladyId})\n` +
-      `⭐ Rating: ${ratingStatus}${successfulRating ? ` (Rating: ${successfulRating})` : ''}\n` +
-      `💬 Message: ${messageResult}`
-    );
+    console.log(`\n👩 Processing ${count}. ${lady.name} (${lady.ladyId})`);
+    console.log(`⭐ Rating: ${ratingResult}${ratingValue ? ' (Rating ' + ratingValue + ')' : ''}`);
+    console.log(`💬 Message: ${messageResult}`);
 
-    // Small delay to reduce server strain between iterations
+    // Short delay to reduce server strain
     await page.waitForTimeout(100);
   }
 
