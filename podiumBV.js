@@ -135,13 +135,11 @@ module.exports = async function runPodiumBV(page) {
     }
 
     // -----------------------------
-    // FINAL LOG (ONCE PER LADY)
+    // FINAL LOG (ONCE PER LADY) — SINGLE LINE
     // -----------------------------
-    console.log(`
-👩 ${index}. ${ladyName} (${ladyId})
-⭐ Rating: ${ratingStatus}${ratingValue ? ` (${ratingValue})` : ''}
-💬 Message: ${messageStatus}
-`);
+    console.log(
+      `👩 ${index}. ${ladyName} (${ladyId}) | ⭐ Rating: ${ratingStatus}${ratingValue ? ` (${ratingValue})` : ''} | 💬 Message: ${messageStatus}`
+    );
   }
 
   console.log('🎉 PodiumBV completed');
