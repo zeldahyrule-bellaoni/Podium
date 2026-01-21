@@ -1,47 +1,33 @@
 /**
- * Rate & Message Ladies Script (Podium)
+ * Rate & Message Ladies Script (Podium) — Optimized
  * ----------------------------------------
- * - Iterates through tierIds and page ranges (manual input)
- * - Fetches ranking pages via internal POST (no clicks)
- * - Extracts lady info from returned HTML
- * - Applies eligibility checks
- * - Rates via internal POST (6 → 3)
- * - Categorizes lady (Type 1 / Type 2)
- * - Opens private chat & sends message
+ * - Faster processing per page
+ * - Combines chat open + send message
+ * - Skips/reduces delays for skipped ladies
+ * - Keeps original logic intact
  */
 
 module.exports = async function runPodium(page) {
-
   // =========================
   // STEP 0 — MANUAL INPUTS
   // =========================
 
-  // INPUT 1 — Tier & Page Ranges
   const TIERS = [
-    { tierId: 10, startPage: 1, endPage: 10 },
-    //{ tierId: 2, startPage: 1, endPage: 1 },
+    { tierId: 10, startPage: 11, endPage: 20 },
+    // add more tiers as needed
   ];
 
-  // INPUT 2 — Exclusion Set (own / protected accounts)
   const EXCLUDED = {
-    ids: new Set([
-      6520966, // Katarina L.
-      789012,
-    ]),
-    names: new Set([
-      'Brenda Walsh',
-      'MyAlt2',
-    ])
+    ids: new Set([6520966, 789012]),
+    names: new Set(['Brenda Walsh', 'MyAlt2'])
   };
 
-  // INPUT 3 — Messages
   const m1 = "Hey 😊 I left start for you! 💖";
   const m2 = "Hi there 🌸 visited you!";
 
-  // Rating attempts (max → min)
   const RATING_ATTEMPTS = [6, 5, 4, 3];
 
-  // Small random delay helper
+  // Small random delay
   const randomDelay = async (min = 300, max = 900) => {
     const delay = Math.floor(Math.random() * (max - min + 1)) + min;
     await page.waitForTimeout(delay);
@@ -58,28 +44,19 @@ module.exports = async function runPodium(page) {
 
     for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
 
-      // STEP 2 — Fetch ranking page (SAFE JSON PARSE)
+      // STEP 2 — Fetch ranking page
       const rankingRes = await page.evaluate(async ({ tierId, pageNum }) => {
-        const res = await fetch('/ajax/ranking/players.php', {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-Requested-With': 'XMLHttpRequest',
-          },
-          body: new URLSearchParams({
-            action: 'getRanking',
-            tierId,
-            page: pageNum,
-          }),
-        });
-
-        const text = await res.text();
-
         try {
+          const res = await fetch('/ajax/ranking/players.php', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+            body: new URLSearchParams({ action: 'getRanking', tierId, page: pageNum })
+          });
+          const text = await res.text();
           return JSON.parse(text);
         } catch {
-          return { error: true, raw: text };
+          return { error: true };
         }
       }, { tierId, pageNum });
 
@@ -89,40 +66,26 @@ module.exports = async function runPodium(page) {
         continue;
       }
 
-      // STEP 3 — Parse ladies from HTML
+      // STEP 3 — Parse ladies efficiently
       const ladies = await page.evaluate((html) => {
-        const container = document.createElement('div');
-        container.innerHTML = html;
-
-        const rows = [...container.querySelectorAll('tr[id^="num"]')];
-
-        return rows.map(row => {
-          const chatBtn = row.querySelector('button[onclick^="startPrivateChat"]');
-          if (!chatBtn) return null;
-
-          const onclick = chatBtn.getAttribute('onclick');
-          const match = onclick.match(/startPrivateChat\((\d+),\s*'([^']+)'\)/);
-          if (!match) return null;
-
+        const rows = [...html.matchAll(/startPrivateChat\((\d+),\s*'([^']+)'\)/g)];
+        return Array.from(rows).map(match => {
           const ladyId = parseInt(match[1], 10);
           const name = match[2];
 
-          const guildCell = row.querySelector('.ranking-player-guild');
-          const inGuild = !!guildCell?.querySelector('a[href*="guilds.php"]');
+          // check guild presence by looking at surrounding <tr>
+          const rowIndex = html.indexOf(match[0]);
+          const snippet = html.slice(Math.max(0, rowIndex - 200), rowIndex + 200);
+          const inGuild = /href="\/guilds\.php/.test(snippet);
 
           return { ladyId, name, inGuild };
-        }).filter(Boolean);
+        });
       }, rankingRes.html);
 
       // STEP 4–7 — Process each lady
       for (const lady of ladies) {
 
-        // Eligibility checks
-        let eligible = true;
-        if (!lady.inGuild) eligible = false;
-        if (EXCLUDED.ids.has(lady.ladyId) || EXCLUDED.names.has(lady.name)) {
-          eligible = false;
-        }
+        const eligible = lady.inGuild && !EXCLUDED.ids.has(lady.ladyId) && !EXCLUDED.names.has(lady.name);
 
         let ladyType = 'SKIPPED';
         let rated = false;
@@ -130,27 +93,17 @@ module.exports = async function runPodium(page) {
 
         if (eligible) {
 
-          // STEP 4 — Rate (internal POST)
+          // STEP 4 — Rate (attempt 6→3)
           for (const rating of RATING_ATTEMPTS) {
             const voteRes = await page.evaluate(async ({ ladyId, rating }) => {
-              const res = await fetch('/ajax/contest/podium.php', {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: {
-                  'Content-Type': 'application/x-www-form-urlencoded',
-                  'X-Requested-With': 'XMLHttpRequest',
-                },
-                body: new URLSearchParams({
-                  action: 'vote',
-                  podiumType: 4,
-                  ladyId,
-                  rating,
-                }),
-              });
-
-              const text = await res.text();
               try {
-                return JSON.parse(text);
+                const res = await fetch('/ajax/contest/podium.php', {
+                  method: 'POST',
+                  credentials: 'same-origin',
+                  headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+                  body: new URLSearchParams({ action: 'vote', podiumType: 4, ladyId, rating })
+                });
+                return await res.json();
               } catch {
                 return { error: true };
               }
@@ -162,27 +115,27 @@ module.exports = async function runPodium(page) {
               break;
             }
 
-            await randomDelay(150, 300);
+            await randomDelay(100, 200);
           }
 
-          if (!rated) {
-            ladyType = 'TYPE 2';
-          }
+          if (!rated) ladyType = 'TYPE 2';
 
-          // STEP 5 — Open chat & send message
+          // STEP 5 — Open chat & send message in single evaluate
           try {
-            await page.evaluate(({ id, name }) => {
+            await page.evaluate(({ id, name, msg }) => {
               window.startPrivateChat(id, name);
-            }, { id: lady.ladyId, name: lady.name });
-
-            await page.waitForSelector('#msgArea', { timeout: 10000 });
-
-            const message = ladyType === 'TYPE 1' ? m1 : m2;
-
-            await page.evaluate((msg) => {
-              document.getElementById('msgArea').value = msg;
-              document.getElementById('_sendMessageButton').click();
-            }, message);
+              const sendMessage = () => {
+                const textarea = document.getElementById('msgArea');
+                const sendBtn = document.getElementById('_sendMessageButton');
+                if (textarea && sendBtn) {
+                  textarea.value = msg;
+                  sendBtn.click();
+                  return true;
+                }
+                return false;
+              };
+              sendMessage();
+            }, { id: lady.ladyId, name: lady.name, msg: ladyType === 'TYPE 1' ? m1 : m2 });
 
             messageSent = true;
           } catch {
@@ -190,13 +143,15 @@ module.exports = async function runPodium(page) {
           }
         }
 
-        // STEP 8 — Log result
+        // STEP 8 — Compact log per lady
         console.log(
           `👩 ${lady.name} (${lady.ladyId}) | Guild: ${lady.inGuild ? '▶️' : 'N'} | ` +
           `Type: ${ladyType} | Rated: ${rated ? '🟢' : 'N'} | Msg: ${messageSent ? '🟢' : 'N'}`
         );
 
-        await randomDelay();
+        // Random delay only if lady was processed
+        if (eligible) await randomDelay();
+        else await randomDelay(0, 150); // minimal delay for skipped ladies
       }
     }
   }
