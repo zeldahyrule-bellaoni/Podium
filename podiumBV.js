@@ -1,141 +1,120 @@
+// podiumBV.js
+require('dotenv').config();
+const fs = require('fs');
+
 /**
- * podiumBV.js
- * ------------------------
- * Subscript to:
- * 0️⃣ Go to ranking page
- * 1️⃣ Rate guild ladies (6→3 in quick succession, then check responses)
- * 2️⃣ Open private chat and send a fixed message (without clicks)
- * 3️⃣ Stay on ranking page for all iterations
- *
- * Syncs with main script.
+ * Assumptions:
+ * 1. You are ALREADY logged in.
+ * 2. This script is called with a Playwright `page` instance.
+ * 3. guild_ladies.json is in the same folder.
+ * 4. We stay on ranking/players.php the whole time.
  */
 
-const fs = require('fs');
-const path = require('path');
-
 module.exports = async function runPodiumBV(page) {
-  if (!page) throw new Error('❌ Playwright page object required');
+  console.log('🏁 PodiumBV started');
 
-  console.log('🚀 PodiumBV started');
+  // --------------------------------------------------
+  // CONFIG
+  // --------------------------------------------------
+  const MESSAGE_TEXT = 'Hello! 🌸';
+  const LADIES_FILE = './guild_ladies.json';
 
-  // -----------------------------
-  // 0️⃣ Go to ranking page (stay here)
-  // -----------------------------
-  const rankingUrl = 'https://v3.g.ladypopular.com/ranking/players.php';
-  await page.goto(rankingUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
-  console.log(`🌐 Navigated to ranking page: ${rankingUrl}`);
+  // --------------------------------------------------
+  // LOAD LADIES
+  // --------------------------------------------------
+  const ladies = JSON.parse(fs.readFileSync(LADIES_FILE, 'utf8'));
 
-  // -----------------------------
-  // 1️⃣ Load guild_ladies.json
-  // -----------------------------
-  const jsonPath = path.join(__dirname, 'guild_ladies.json');
-  if (!fs.existsSync(jsonPath)) throw new Error('❌ guild_ladies.json not found');
+  console.log(`👩 Total ladies loaded: ${ladies.length}`);
 
-  const raw = fs.readFileSync(jsonPath, 'utf8');
-  const ladies = JSON.parse(raw);
-  console.log(`📦 Loaded ${ladies.length} guild ladies`);
+  // --------------------------------------------------
+  // ENSURE BASE PAGE
+  // --------------------------------------------------
+  await page.goto('https://v3.g.ladypopular.com/ranking/players.php', {
+    waitUntil: 'domcontentloaded'
+  });
 
-  // -----------------------------
-  // 2️⃣ Hardcoded message text
-  // -----------------------------
-  const messageText = "Hello!";
+  // --------------------------------------------------
+  // MAIN LOOP
+  // --------------------------------------------------
+  for (let i = 0; i < ladies.length; i++) {
+    const { id: ladyId, name: ladyName } = ladies[i];
 
-  // -----------------------------
-  // 3️⃣ Loop through ladies
-  // -----------------------------
-  let count = 0;
+    let ratingResult = '❌ Unavailable';
+    let messageResult = '❌ Not sent';
 
-  for (const lady of ladies) {
-    count++;
-    // Will log only once at the end of loop
-    let ratingResult = '❌ Rating unavailable';
-    let ratingValue = null;
-    let messageResult = '❌ Message failed';
+    console.log(`\n👩 Processing ${i + 1}. ${ladyName} (${ladyId})`);
 
     try {
-      // -----------------------------
-      // STEP 1 — RATE LADY (6 → 3, quick succession)
-      // -----------------------------
-      const ratings = [6, 5, 4, 3];
-      const ratingPromises = [];
+      // ----------------------------------------------
+      // STEP 1: TRY RATING (3–6)
+      // ----------------------------------------------
+      ratingResult = await page.evaluate((id) => {
+        if (typeof window.ratePlayer !== 'function') return '❌ Unavailable';
 
-      for (const rating of ratings) {
-        ratingPromises.push(page.evaluate(async ({ ladyId, rating }) => {
-          const res = await fetch('https://v3.g.ladypopular.com/ajax/contest/podium.php', {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-              'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: new URLSearchParams({
-              action: 'vote',
-              podiumType: 4,
-              ladyId,
-              rating
-            })
-          });
-
+        for (let r = 6; r >= 3; r--) {
           try {
-            return { rating, ...await res.json() };
-          } catch {
-            return { rating, error: true };
-          }
-        }, { ladyId: lady.ladyId, rating }));
-      }
-
-      const results = await Promise.all(ratingPromises);
-      const successObj = results.find(r => r.status === 1);
-      if (successObj) {
-        ratingResult = '✅ Successful';
-        ratingValue = successObj.rating;
-      }
-    } catch (err) {
-      ratingResult = `❌ Rating error: ${err.message}`;
+            const res = window.ratePlayer(id, r);
+            if (res !== false) {
+              return `✅ Successful (${r}⭐)`;
+            }
+          } catch (_) {}
+        }
+        return '❌ Unavailable';
+      }, ladyId);
+    } catch (_) {
+      ratingResult = '❌ Unavailable';
     }
 
-    // -----------------------------
-    // STEP 2 — MESSAGE LADY
-    // -----------------------------
     try {
-      // Open chat for the current lady
-      await page.evaluate(({ ladyId, ladyName }) => {
-        window.startPrivateChat(ladyId, ladyName);
-      }, { ladyId: lady.ladyId, ladyName: lady.name });
+      // ----------------------------------------------
+      // STEP 2: OPEN PRIVATE CHAT
+      // ----------------------------------------------
+      await page.evaluate((id, name) => {
+        window.startPrivateChat(id, name);
+      }, ladyId, ladyName);
 
-      // Wait a fixed time for new chat elements to appear
-      await page.waitForTimeout(350);
+      // ----------------------------------------------
+      // STEP 3: WAIT FOR *CORRECT CHAT CONTEXT*
+      // (THIS IS THE CRITICAL FIX)
+      // ----------------------------------------------
+      await page.waitForFunction(
+        (expectedName) => {
+          const input = document.querySelector(
+            '#js-chat-newprivate-search-input'
+          );
+          return input && input.value.trim() === expectedName;
+        },
+        ladyName,
+        { timeout: 15000 }
+      );
 
-      // Check if chat elements exist before typing
-      const msgAreaExists = await page.$('#msgArea');
-      const sendBtnExists = await page.$('#_sendMessageButton');
+      // ----------------------------------------------
+      // STEP 4: SEND MESSAGE
+      // ----------------------------------------------
+      await page.evaluate((msg) => {
+        const textarea = document.querySelector('#msgArea');
+        const sendBtn = document.querySelector('#_sendMessageButton');
 
-      if (msgAreaExists && sendBtnExists) {
-        await page.evaluate((msg) => {
-          const area = document.getElementById('msgArea');
-          const sendBtn = document.getElementById('_sendMessageButton');
-          area.value = msg;
-          sendBtn.click();
-        }, messageText);
+        if (!textarea || !sendBtn) {
+          throw new Error('Chat input not ready');
+        }
 
-        messageResult = '✅ Message sent';
-      } else {
-        messageResult = '❌ Message failed: chat elements not found';
-      }
+        textarea.value = msg;
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        sendBtn.click();
+      }, MESSAGE_TEXT);
+
+      messageResult = '✅ Message sent';
     } catch (err) {
-      messageResult = `❌ Message failed: ${err.message}`;
+      messageResult = `❌ Message failed`;
     }
 
-    // -----------------------------
-    // STEP 3 — Log results for this lady
-    // -----------------------------
-    console.log(`\n👩 Processing ${count}. ${lady.name} (${lady.ladyId})`);
-    console.log(`⭐ Rating: ${ratingResult}${ratingValue ? ' (Rating ' + ratingValue + ')' : ''}`);
+    // ------------------------------------------------
+    // FINAL LOG (ONLY ONCE PER LADY — AS REQUESTED)
+    // ------------------------------------------------
+    console.log(`⭐ Rating: ${ratingResult}`);
     console.log(`💬 Message: ${messageResult}`);
-
-    // Short delay to reduce server strain
-    await page.waitForTimeout(100);
   }
 
-  console.log('\n🎉 PodiumBV completed for all ladies');
+  console.log('\n🎉 PodiumBV completed');
 };
