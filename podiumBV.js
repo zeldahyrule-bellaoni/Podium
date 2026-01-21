@@ -1,47 +1,23 @@
 /**
  * podiumBV.js
  * ------------------------
- * 0️⃣ Go to ranking page
- * 1️⃣ Rate guild ladies (6→3 in parallel)
- * 2️⃣ Open private chat and send message ONLY after correct lady chat is confirmed
- * 3️⃣ Stay on ranking page throughout
+ * Worker logic:
+ * - Rate
+ * - Open chat
+ * - Confirm correct lady
+ * - Send message
  */
 
-const fs = require('fs');
-const path = require('path');
-
-module.exports = async function runPodiumBV(page) {
+module.exports = async function runPodiumBV(page, ladies, tabNumber = 1) {
   if (!page) throw new Error('❌ Playwright page object required');
 
-  console.log('🚀 Starting: Podium BV');
+  console.log(`🪟 Tab ${tabNumber} | 🚀 PodiumBV started`);
+  console.log(`🪟 Tab ${tabNumber} | 👩 Ladies loaded: ${ladies.length}`);
 
-  // -----------------------------
-  // 0️⃣ Go to ranking page
-  // -----------------------------
-  const rankingUrl = 'https://v3.g.ladypopular.com/ranking/players.php';
-  await page.goto(rankingUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
-
-  console.log('🏁 PodiumBV started');
-
-  // -----------------------------
-  // 1️⃣ Load JSON
-  // -----------------------------
-  const jsonPath = path.join(__dirname, 'guild_ladies.json');
-  if (!fs.existsSync(jsonPath)) throw new Error('❌ guild_ladies.json not found');
-
-  const ladies = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-  console.log(`👩 Total ladies loaded: ${ladies.length}`);
-
-  // -----------------------------
-  // 2️⃣ Message text
-  // -----------------------------
   const MESSAGE_TEXT = 'Wishing you a beautiful day, my dear friend! Hugs ฅ^•ﻌ•^ฅ';
 
   let index = 0;
 
-  // -----------------------------
-  // 3️⃣ Main loop
-  // -----------------------------
   for (const lady of ladies) {
     index++;
 
@@ -53,7 +29,7 @@ module.exports = async function runPodiumBV(page) {
     let messageStatus = '❌ Message failed';
 
     // -----------------------------
-    // STEP 1 — RATE (6 → 3)
+    // RATE (6 → 3)
     // -----------------------------
     try {
       const ratings = [6, 5, 4, 3];
@@ -93,15 +69,12 @@ module.exports = async function runPodiumBV(page) {
         ratingStatus = '✅ Successful';
         ratingValue = success.rating;
       }
-    } catch {
-      // silently fail rating
-    }
+    } catch {}
 
     // -----------------------------
-    // STEP 2 — MESSAGE (SAFE CHAT SYNC)
+    // MESSAGE (SAFE CHAT SYNC)
     // -----------------------------
     try {
-      // Open chat
       await page.evaluate(
         ({ ladyId, ladyName }) => {
           window.startPrivateChat(ladyId, ladyName);
@@ -109,9 +82,8 @@ module.exports = async function runPodiumBV(page) {
         { ladyId, ladyName }
       );
 
-      // Wait until CENTER chat input shows THIS lady's name
       await page.waitForFunction(
-        (expectedName) => {
+        expectedName => {
           const el = document.getElementById('js-chat-newprivate-search-input');
           return el && el.value === expectedName;
         },
@@ -119,8 +91,7 @@ module.exports = async function runPodiumBV(page) {
         { timeout: 15000 }
       );
 
-      // Send message
-      await page.evaluate((msg) => {
+      await page.evaluate(msg => {
         const area = document.getElementById('msgArea');
         const btn = document.getElementById('_sendMessageButton');
         if (!area || !btn) throw new Error('Chat input missing');
@@ -134,13 +105,10 @@ module.exports = async function runPodiumBV(page) {
       messageStatus = '❌ Message failed';
     }
 
-    // -----------------------------
-    // FINAL LOG (ONCE PER LADY) — SINGLE LINE
-    // -----------------------------
     console.log(
-      `👩 ${index}. ${ladyName} (${ladyId}) | ⭐ Rating: ${ratingStatus}${ratingValue ? ` (${ratingValue})` : ''} | 💬 Message: ${messageStatus}`
+      `🪟${tabNumber} 👩 ${index}. ${ladyName} (${ladyId}) | ⭐ Rating: ${ratingStatus}${ratingValue ? ` (${ratingValue})` : ''} | 💬 Message: ${messageStatus}`
     );
   }
 
-  console.log('🎉 PodiumBV completed');
+  console.log(`🪟 Tab ${tabNumber} | 🎉 PodiumBV completed`);
 };
