@@ -1,7 +1,6 @@
 // rate-and-message-multiple-ladies.js
 module.exports = async function runRateAndMessageMultipleLadies(page, tierConfigs) {
 
-  // ❌ Profiles you NEVER want to visit
   const excludedProfileIds = [
     '7709322','11264860','11264915','11265728','11265695',
     '11266176','11266738','6597974','7722810','7550302',
@@ -9,10 +8,10 @@ module.exports = async function runRateAndMessageMultipleLadies(page, tierConfig
   ];
 
   const m1 = 'max stars <3';
-  const m2 = 'big hugs <3'; //all won
-  const m3 = 'big hugs <3 168h'; //168
+  const m2 = 'big hugs <3';
+  const m3 = 'big hugs <3 168h';
 
-  console.log("🚀 Collecting profile IDs for assigned workload");
+  const tabLabel = page._guid || 'T?'; // fallback safety
 
   let allProfiles = [];
 
@@ -22,10 +21,8 @@ module.exports = async function runRateAndMessageMultipleLadies(page, tierConfig
   });
   await page.waitForTimeout(2000);
 
-  // 🔹 SAME LOGIC — just uses injected tierConfigs
   for (const { tierId, startPage, endPage } of tierConfigs) {
     for (let currentPage = startPage; currentPage <= endPage; currentPage++) {
-
       const profilesOnPage = await page.evaluate(
         async ({ currentPage, tierId }) => {
           const res = await fetch('/ajax/ranking/players.php', {
@@ -69,39 +66,23 @@ module.exports = async function runRateAndMessageMultipleLadies(page, tierConfig
     }
   }
 
-  // Dedup + exclude
   allProfiles = [...new Set(allProfiles)].filter(
     id => !excludedProfileIds.includes(id)
   );
 
-  console.log(`✅ ${allProfiles.length} profiles assigned to this tab`);
-
-  // 🔹 FROM HERE ONWARD — YOUR ORIGINAL LOGIC UNCHANGED
-  // Visiting profiles, detecting cases, rating, messaging
-  // (exact same code you already wrote)
-  // ===============================
-  // LOOP THROUGH EACH PROFILE
-  // ===============================
   for (let i = 0; i < allProfiles.length; i++) {
-    const profileId = allProfiles[i];
-    const ladyProfileUrl = `https://v3.g.ladypopular.com/profile.php?id=${profileId}`;
 
-    console.log(`\n🌟 (${i + 1}/${allProfiles.length}) Visiting ${ladyProfileUrl}`);
+    const profileId = allProfiles[i];
+    const url = `https://v3.g.ladypopular.com/profile.php?id=${profileId}`;
+
+    let caseType = 'case1';
+    let ratingResult = null;   // true | false | null
+    let messageResult = false; // true | false
 
     try {
-      // ===============================
-      // STEP 1 — OPEN PROFILE
-      // ===============================
-      await page.goto(ladyProfileUrl, {
-        waitUntil: 'domcontentloaded',
-        timeout: 60000
-      });
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
       await page.waitForTimeout(2000);
 
-      // ===============================
-      // STEP 2 — DETERMINE CASE
-      // ===============================
-      let caseType = 'case1';
       const alreadyVotedText = await page
         .locator('.lady-rating-wraper .alreadyVoted')
         .textContent()
@@ -110,78 +91,98 @@ module.exports = async function runRateAndMessageMultipleLadies(page, tierConfig
       if (alreadyVotedText.includes('won all podium prizes')) caseType = 'case2';
       else if (alreadyVotedText.includes('already 3 votes')) caseType = 'case3';
 
-      console.log(`📌 Case detected: ${caseType}`);
-
-      // ===============================
-      // STEP 3 — RATE (CASE 1 ONLY)
-      // ===============================
+      // ⭐ RATING
       if (caseType === 'case1') {
-        const buttons = await page
-          .locator('.lady-rating-wraper ol.rating li.active button')
-          .elementHandles();
+        try {
+          const buttons = await page
+            .locator('.lady-rating-wraper ol.rating li.active button')
+            .elementHandles();
 
-        if (buttons.length > 0) {
-          const onclickText = await buttons[buttons.length - 1].getAttribute('onclick');
-          const match = onclickText.match(/podiumVote\('(\d+)',(\d+),(\d+)\)/);
+          if (buttons.length) {
+            const onclickText = await buttons.at(-1).getAttribute('onclick');
+            const match = onclickText.match(/podiumVote\('(\d+)',(\d+),(\d+)\)/);
 
-          if (match) {
-            const [, podiumType, ladyId, rating] = match;
+            if (match) {
+              const [, podiumType, ladyId, rating] = match;
 
-            const res = await page.evaluate(async ({ podiumType, ladyId, rating }) => {
-              const r = await fetch('/ajax/contest/podium.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({
-                  action: 'vote',
-                  podiumType,
-                  ladyId,
-                  rating
-                })
-              });
-              return await r.json();
-            }, { podiumType, ladyId, rating });
+              const res = await page.evaluate(async ({ podiumType, ladyId, rating }) => {
+                const r = await fetch('/ajax/contest/podium.php', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                  body: new URLSearchParams({
+                    action: 'vote',
+                    podiumType,
+                    ladyId,
+                    rating
+                  })
+                });
+                return r.json();
+              }, { podiumType, ladyId, rating });
 
-            if (res.status === 1) console.log('✅ Rating successful');
+              ratingResult = res?.status === 1;
+            }
           }
+        } catch {
+          ratingResult = false;
         }
       }
 
-      // ===============================
-      // STEP 4 — MESSAGE
-      // ===============================
-      const messageButton = await page
-        .locator('.following-container .message-btn[onclick*="startPrivateChat"]')
-        .first();
-
-      const onclickAttr = await messageButton.getAttribute('onclick');
-      const chatMatch = onclickAttr.match(/startPrivateChat\('(\d+)',\s*'([^']+)'\)/);
-      if (!chatMatch) continue;
-
-      const [, chatLadyId, chatLadyName] = chatMatch;
-
-      await page.evaluate(({ chatLadyId, chatLadyName }) => {
-        startPrivateChat(chatLadyId, chatLadyName);
-      }, { chatLadyId, chatLadyName });
-
-      await page.waitForTimeout(1200);
-
+      // 💬 MESSAGE (with retry)
       const message =
         caseType === 'case1' ? m1 :
         caseType === 'case2' ? m2 : m3;
 
-      await page.evaluate(msg => {
-        document.getElementById('msgArea').value = msg;
-        document.getElementById('_sendMessageButton').click();
-      }, message);
+      const trySendMessage = async () => {
+        const messageButton = page
+          .locator('.following-container .message-btn[onclick*="startPrivateChat"]')
+          .first();
 
-      console.log('💬 Message sent');
-      await page.waitForTimeout(1200);
+        const onclickAttr = await messageButton.getAttribute('onclick').catch(() => null);
+        if (!onclickAttr) return false;
 
-    } catch (err) {
-      console.log(`❌ Error on profile ${profileId}: ${err.message}`);
+        const match = onclickAttr.match(/startPrivateChat\('(\d+)',\s*'([^']+)'\)/);
+        if (!match) return false;
+
+        const [, id, name] = match;
+
+        await page.evaluate(({ id, name }) => {
+          startPrivateChat(id, name);
+        }, { id, name });
+
+        try {
+          await page.waitForSelector('#msgArea', { timeout: 4000 });
+          await page.evaluate(msg => {
+            document.getElementById('msgArea').value = msg;
+            document.getElementById('_sendMessageButton').click();
+          }, message);
+          return true;
+        } catch {
+          return false;
+        }
+      };
+
+      messageResult = await trySendMessage();
+
+      if (!messageResult) {
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 60000 });
+        await page.waitForTimeout(2000);
+        messageResult = await trySendMessage();
+      }
+
+    } catch {
+      // swallowed on purpose
     }
+
+    const ratingEmoji =
+      ratingResult === true ? '✅' :
+      ratingResult === false ? '❌' : '⚪️';
+
+    const messageEmoji = messageResult ? '✅' : '❌';
+
+    console.log(
+      `${tabLabel} - (${i + 1}/${allProfiles.length}) ${url} | ${caseType} | ${ratingEmoji}${messageEmoji}`
+    );
   }
 
-  console.log('\n🎉 ALL LADIES PROCESSED');
+  console.log('🎉 TAB COMPLETED');
 };
-
