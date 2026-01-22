@@ -21,10 +21,10 @@ const scripts = [
   { name: 'Slots Event', fn: runSlotsEvent, envKey: 'LP_SLOTS_URL' },
   { name: 'Memory Event', fn: runMemoryEvent, envKey: 'LP_MEMORY_URL' },
   { name: 'Furniture Script', fn: runFurnitureScript, alwaysRun: false },
-  { name: 'Stats Extractor', fn: runStatsExtractor, alwaysRun: false },
-  { name: 'Rate and Message Lady', fn: runRateAndMessage, alwaysRun: false },
-  { name: 'Rate & Message Club Ladies', fn: runRateAndMessageMultipleLadies, alwaysRun: false },
-  { name: 'Podium', fn: runPodium, alwaysRun: false },
+  { name: 'Stats Extractor', fn: runStatsExtractor, alwaysRun: false }, // invitations sub-script, but modified to collect info of ladies who are already in a club. if the player using it is a club Pres it will send invites to them, so be cautious.
+  { name: 'Rate and Message Lady', fn: runRateAndMessage, alwaysRun: false }, // visits, rates and messages 1 lady.
+  { name: 'Rate & Message Club Ladies', fn: runRateAndMessageMultipleLadies, alwaysRun: false }, //perfect, but takes time. 5 hours for 3100.
+  { name: 'Podium', fn: runPodium, alwaysRun: false }, // gets the info of guild-ladies in ~10 mins
 ];
 
 (async () => {
@@ -146,3 +146,4 @@ const scripts = [
   await browser.close();
   console.log(`\n🎉 All scripts done. Browser closed.`);
 })();
+
