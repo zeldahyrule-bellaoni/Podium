@@ -8,9 +8,9 @@ module.exports = async function runRateAndMessageMultipleLadies(page, tierConfig
     '11285359','11258511','2914453','7506725',
   ];
 
-  const m1 = 'Awesome look my dear, max stars and big hugs 😍';
-  const m2 = 'Awesome look my dear, big hugs 😍';
-  const m3 = 'Awesome look my dear, big hugs 😍 168h';
+  const m1 = 'max stars <3';
+  const m2 = 'big hugs <3'; //all won
+  const m3 = 'big hugs <3 168h'; //168
 
   console.log("🚀 Collecting profile IDs for assigned workload");
 
