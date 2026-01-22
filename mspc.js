@@ -11,8 +11,6 @@ const runFurnitureScript = require('./furniture.js');
 const runStatsExtractor = require('./stats.js');
 const runRateAndMessage = require('./rate-and-message.js');
 const runRateAndMessageMultipleLadies = require('./rate-and-message-multiple-ladies.js');
-const runPodium = require('./podium.js');
-const runPodiumBVMultiTabs = require('./podiumBV.multiTabs.js');
 
 const scripts = [
   { name: 'Burn Energy', fn: runBurnEnergy, alwaysRun: false },
@@ -24,7 +22,6 @@ const scripts = [
   { name: 'Stats Extractor', fn: runStatsExtractor, alwaysRun: false }, // invitations sub-script, but modified to collect info of ladies who are already in a club. if the player using it is a club Pres it will send invites to them, so be cautious.
   { name: 'Rate and Message Lady', fn: runRateAndMessage, alwaysRun: false }, // visits, rates and messages 1 lady.
   { name: 'Rate & Message Club Ladies', fn: runRateAndMessageMultipleLadies, alwaysRun: false }, //perfect, but takes time. 5 hours for 3100.
-  { name: 'Podium', fn: runPodium, alwaysRun: false }, // gets the info of guild-ladies in ~10 mins
 ];
 
 (async () => {
@@ -112,17 +109,6 @@ const scripts = [
     await page.screenshot({ path: 'cookie-error.png', fullPage: true });
   }
 
-  // ===================================
-  // ✅ PODIUM BV (MULTI-TAB EXECUTION)
-  // ===================================
-  console.log('\n🚀 Starting: Podium BV (Multi-Tab)');
-  try { 
-    await runPodiumBVMultiTabs(context, 4);
-    console.log('✅ Podium BV finished successfully.');
-  } catch (err) {
-    console.log(`❌ Podium BV failed: ${err.message}`);
-  }
-
   // ✅ RUN EACH SCRIPT
   for (const script of scripts) {
     const shouldRun =
@@ -146,4 +132,5 @@ const scripts = [
   await browser.close();
   console.log(`\n🎉 All scripts done. Browser closed.`);
 })();
+
 
