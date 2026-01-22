@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const runRateAndMessageMultipleLadies =
+const runRateAndMessageMultipleLadiesMultiTabs =
   require('./rate-and-message-multiple-ladies.js');
 
 const runMap = require('./run-map.js');
