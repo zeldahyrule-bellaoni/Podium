@@ -12,7 +12,7 @@ module.exports = async function runMultiTab(context) {
     [{ tierId: 5, startPage: 31, endPage: 45 }],
     [{ tierId: 5, startPage: 46, endPage: 60 }],
     [{ tierId: 5, startPage: 61, endPage: 75 }],
-    [{ tierId: 5, startPage: 75, endPage: 90 }],
+    [{ tierId: 5, startPage: 76, endPage: 90 }],
   ];
 
   const tabPromises = workloads.map(async (tierConfig, index) => {
