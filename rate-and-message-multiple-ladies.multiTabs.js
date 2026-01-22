@@ -7,12 +7,12 @@ module.exports = async function runMultiTab(context) {
 
   // 🔹 Explicit, non-overlapping workloads
   const workloads = [
-    [{ tierId: 10, startPage: 1,   endPage: 50  }],
-    [{ tierId: 10, startPage: 51,  endPage: 100 }],
-    [{ tierId: 10, startPage: 101, endPage: 150 }],
-    [{ tierId: 10, startPage: 151, endPage: 200 }],
-    [{ tierId: 10, startPage: 201, endPage: 250 }],
-    [{ tierId: 10, startPage: 251, endPage: 293 }],
+    [{ tierId: 5, startPage: 1,   endPage: 15  }],
+    [{ tierId: 5, startPage: 16,  endPage: 30 }],
+    [{ tierId: 5, startPage: 31, endPage: 45 }],
+    [{ tierId: 5, startPage: 46, endPage: 60 }],
+    [{ tierId: 5, startPage: 61, endPage: 75 }],
+    [{ tierId: 5, startPage: 75, endPage: 90 }],
   ];
 
   const tabPromises = workloads.map(async (tierConfig, index) => {
