@@ -10,6 +10,7 @@ const runMemoryEvent = require('./memory.js');
 const runFurnitureScript = require('./furniture.js');
 const runStatsExtractor = require('./stats.js');
 const runRateAndMessage = require('./rate-and-message.js');
+const runRateAndMessageMultipleLadiesMultiTabs = require('./rate-and-message-multiple-ladies.multiTabs.js');
 
 const scripts = [
   { name: 'Burn Energy', fn: runBurnEnergy, alwaysRun: false },
@@ -20,6 +21,7 @@ const scripts = [
   { name: 'Furniture Script', fn: runFurnitureScript, alwaysRun: false },
   { name: 'Stats Extractor', fn: runStatsExtractor, alwaysRun: false }, // invitations sub-script, but modified to collect info of ladies who are already in a club. if the player using it is a club Pres it will send invites to them, so be cautious.
   { name: 'Rate and Message Lady', fn: runRateAndMessage, alwaysRun: false }, // visits, rates and messages 1 lady.
+  { name: 'Rate & Message Club Ladies (6 Tabs)', fn: runRateAndMessageMultipleLadiesMultiTabs, alwaysRun: true },
 ];
 
 (async () => {
@@ -130,6 +132,7 @@ const scripts = [
   await browser.close();
   console.log(`\n🎉 All scripts done. Browser closed.`);
 })();
+
 
 
 
