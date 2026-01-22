@@ -12,7 +12,7 @@ const runStatsExtractor = require('./stats.js');
 const runRateAndMessage = require('./rate-and-message.js');
 const runRateAndMessageMultipleLadies = require('./rate-and-message-multiple-ladies.js');
 const runPodium = require('./podium.js');
-const runPodiumBV = require('./podiumBV.js');
+const runPodiumBVMultiTabs = require('./podiumBV.multiTabs.js');
 
 const scripts = [
   { name: 'Burn Energy', fn: runBurnEnergy, alwaysRun: false },
@@ -25,7 +25,6 @@ const scripts = [
   { name: 'Rate and Message Lady', fn: runRateAndMessage, alwaysRun: false }, // visits, rates and messages 1 lady.
   { name: 'Rate & Message Club Ladies', fn: runRateAndMessageMultipleLadies, alwaysRun: false }, //perfect, but takes time 
   { name: 'Podium', fn: runPodium, alwaysRun: false }, // gets the info of guild-ladies in ~10 mins
-  { name: 'Podium BV', fn: runPodiumBV, alwaysRun: true },
 ];
 
 (async () => {
@@ -123,6 +122,17 @@ const scripts = [
       continue;
     }
 
+    // ===================================
+    // ✅ PODIUM BV (MULTI-TAB EXECUTION)
+    // ===================================
+    console.log('\n🚀 Starting: Podium BV (Multi-Tab)');
+    try { 
+      await runPodiumBVMultiTabs(context, 4);
+      console.log('✅ Podium BV finished successfully.');
+    } catch (err) {
+      console.log(`❌ Podium BV failed: ${err.message}`);
+    }
+
     console.log(`\n🚀 Starting: ${script.name}`);
     try {
       await script.fn(page); // Call the script function with shared page
@@ -136,6 +146,7 @@ const scripts = [
   await browser.close();
   console.log(`\n🎉 All scripts done. Browser closed.`);
 })();
+
 
 
 
