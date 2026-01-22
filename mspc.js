@@ -1,4 +1,4 @@
-require('dotenv').config(); 
+require('dotenv').config();
 const { chromium } = require('playwright');
 
 // ⬇️ Import all sub-scripts (exported as functions)..
@@ -10,7 +10,8 @@ const runMemoryEvent = require('./memory.js');
 const runFurnitureScript = require('./furniture.js');
 const runStatsExtractor = require('./stats.js');
 const runRateAndMessage = require('./rate-and-message.js');
-const runRateAndMessageMultipleLadiesMultiTabs = require('./rate-and-message-multiple-ladies.multiTabs.js');
+const runRateAndMessageMultipleLadiesMultiTabs =
+  require('./rate-and-message-multiple-ladies.multiTabs.js');
 
 const scripts = [
   { name: 'Burn Energy', fn: runBurnEnergy, alwaysRun: false },
@@ -19,9 +20,22 @@ const scripts = [
   { name: 'Slots Event', fn: runSlotsEvent, envKey: 'LP_SLOTS_URL' },
   { name: 'Memory Event', fn: runMemoryEvent, envKey: 'LP_MEMORY_URL' },
   { name: 'Furniture Script', fn: runFurnitureScript, alwaysRun: false },
-  { name: 'Stats Extractor', fn: runStatsExtractor, alwaysRun: false }, // invitations sub-script, but modified to collect info of ladies who are already in a club. if the player using it is a club Pres it will send invites to them, so be cautious.
-  { name: 'Rate and Message Lady', fn: runRateAndMessage, alwaysRun: false }, // visits, rates and messages 1 lady.
-  { name: 'Rate & Message Club Ladies (6 Tabs)', fn: runRateAndMessageMultipleLadiesMultiTabs, alwaysRun: true },
+  {
+    name: 'Stats Extractor',
+    fn: runStatsExtractor,
+    alwaysRun: false
+  }, // invitations sub-script, but modified to collect info of ladies who are already in a club. if the player using it is a club Pres it will send invites to them, so be cautious.
+  {
+    name: 'Rate and Message Lady',
+    fn: runRateAndMessage,
+    alwaysRun: false
+  }, // visits, rates and messages 1 lady.
+  {
+    name: 'Rate & Message Club Ladies (6 Tabs)',
+    fn: runRateAndMessageMultipleLadiesMultiTabs,
+    alwaysRun: true,
+    needsContext: true
+  },
 ];
 
 (async () => {
@@ -50,7 +64,10 @@ const scripts = [
       console.log("🔐 Entering credentials...");
       await page.waitForSelector('#login-username-field', { timeout: 10000 });
       await page.fill('#login-username-field', email);
-      await page.fill('#loginForm3 > div > label:nth-child(2) > input[type=password]', password);
+      await page.fill(
+        '#loginForm3 > div > label:nth-child(2) > input[type=password]',
+        password
+      );
       await page.waitForTimeout(5000);
       await page.click('#loginSubmit');
 
@@ -60,7 +77,10 @@ const scripts = [
       break;
     } catch (error) {
       console.log(`❌ Login attempt ${attempt} failed: ${error.message}`);
-      await page.screenshot({ path: `login-error-${attempt}.png`, fullPage: true });
+      await page.screenshot({
+        path: `login-error-${attempt}.png`,
+        fullPage: true
+      });
 
       if (attempt === 5) {
         console.log("🚫 Max login attempts reached. Aborting.");
@@ -103,7 +123,7 @@ const scripts = [
     await page.waitForTimeout(5000);
     cookieAccepted = await attemptCookieConsent();
   }
-  
+
   if (!cookieAccepted) {
     console.log("❌ Failed to accept cookie even after retry. Continuing anyway...");
     await page.screenshot({ path: 'cookie-error.png', fullPage: true });
@@ -112,7 +132,8 @@ const scripts = [
   // ✅ RUN EACH SCRIPT
   for (const script of scripts) {
     const shouldRun =
-      script.alwaysRun || (process.env[script.envKey] && process.env[script.envKey] !== '0');
+      script.alwaysRun ||
+      (process.env[script.envKey] && process.env[script.envKey] !== '0');
 
     if (!shouldRun) {
       console.log(`⏭️ ${script.name} skipped (not active or URL = 0)`);
@@ -121,18 +142,21 @@ const scripts = [
 
     console.log(`\n🚀 Starting: ${script.name}`);
     try {
-      await script.fn(page);
+      if (script.needsContext) {
+        await script.fn(context); // 🔹 multi-tab scripts
+      } else {
+        await script.fn(page); // 🔹 normal scripts
+      }
       console.log(`✅ ${script.name} finished successfully.`);
     } catch (err) {
       console.log(`❌ ${script.name} failed: ${err.message}`);
-      await page.screenshot({ path: `${script.name.replace(/\s+/g, '_')}-error.png`, fullPage: true });
+      await page.screenshot({
+        path: `${script.name.replace(/\s+/g, '_')}-error.png`,
+        fullPage: true
+      });
     }
   }
 
   await browser.close();
   console.log(`\n🎉 All scripts done. Browser closed.`);
 })();
-
-
-
-
