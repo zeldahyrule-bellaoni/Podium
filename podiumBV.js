@@ -14,7 +14,7 @@ module.exports = async function runPodiumBV(page, ladies, tabNumber = 1) {
   console.log(`🪟 Tab ${tabNumber} | 🚀 PodiumBV started`);
   console.log(`🪟 Tab ${tabNumber} | 👩 Ladies loaded: ${ladies.length}`);
 
-  const MESSAGE_TEXT = 'hi';
+  const MESSAGE_TEXT = 'hugs <3';
 
   let index = 0;
 
