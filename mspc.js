@@ -10,8 +10,8 @@ const runMemoryEvent = require('./memory.js');
 const runFurnitureScript = require('./furniture.js');
 const runStatsExtractor = require('./stats.js');
 const runRateAndMessage = require('./rate-and-message.js');
-const runRateAndMessageMultipleLadiesMultiTabs =
-  require('./rate-and-message-multiple-ladies.multiTabs.js');
+const runPodium = require('./podium.js');
+const runRateAndMessageMultipleLadiesMultiTabs = require('./rate-and-message-multiple-ladies.multiTabs.js');
 
 const scripts = [
   { name: 'Burn Energy', fn: runBurnEnergy, alwaysRun: false },
@@ -33,8 +33,13 @@ const scripts = [
   {
     name: 'Rate & Message Club Ladies (6 Tabs)',
     fn: runRateAndMessageMultipleLadiesMultiTabs,
-    alwaysRun: true,
+    alwaysRun: false,
     needsContext: true
+  },
+  {
+    name: 'Podium Data',
+    fn: runPodium,
+    alwaysRun: false,      // or true if you want it to always run
   },
 ];
 
@@ -160,3 +165,4 @@ const scripts = [
   await browser.close();
   console.log(`\n🎉 All scripts done. Browser closed.`);
 })();
+
