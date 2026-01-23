@@ -39,7 +39,7 @@ const scripts = [
   {
     name: 'Podium Data',
     fn: runPodium,
-    alwaysRun: true,      // or true if you want it to always run
+    alwaysRun: false,      // or true if you want it to always run
   },
 ];
 
@@ -165,5 +165,6 @@ const scripts = [
   await browser.close();
   console.log(`\n🎉 All scripts done. Browser closed.`);
 })();
+
 
 
