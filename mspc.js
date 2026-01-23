@@ -33,7 +33,7 @@ const scripts = [
   {
     name: 'Rate & Message Club Ladies (6 Tabs)',
     fn: runRateAndMessageMultipleLadiesMultiTabs,
-    alwaysRun: false,
+    alwaysRun: true,
     needsContext: true
   },
   {
@@ -165,6 +165,7 @@ const scripts = [
   await browser.close();
   console.log(`\n🎉 All scripts done. Browser closed.`);
 })();
+
 
 
 
