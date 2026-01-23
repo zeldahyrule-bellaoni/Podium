@@ -7,9 +7,9 @@ module.exports = async function runRateAndMessageMultipleLadies(page, tierConfig
     '11285359','11258511','2914453','7506725',
   ];
 
-  const m1 = 'Hi pretty! Max stars XOXO';
-  const m2 = 'Hi pretty! Big hugs XOXO';
-  const m3 = 'Hi pretty! Big hugs XOXO! 168h';
+  const m1 = '“The face is a mask worn by the mind.” - Friedrich Nietzsche.	Thank you! xoxo	₍^. .^₎⟆ ♡♡♡	Max love to you';
+  const m2 = '“The face is a mask worn by the mind.” - Friedrich Nietzsche.	Thank you! xoxo	₍^. .^₎⟆ ♡♡♡';
+  const m3 = '“The face is a mask worn by the mind.” - Friedrich Nietzsche.	Thank you! xoxo	₍^. .^₎⟆ ♡♡♡	168h';
 
   const tabLabel = page._guid || 'T?'; // fallback safety
 
