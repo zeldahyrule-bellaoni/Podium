@@ -8,8 +8,8 @@ module.exports = async function runRateAndMessageMultipleLadies(page, tierConfig
   ];
 
   const m1 = 'Hi pretty! Max stars XOXO';
-  const m2 = 'Big hugs XOXO';
-  const m3 = 'Big hugs XOXO! 168h';
+  const m2 = 'Hi pretty! Big hugs XOXO';
+  const m3 = 'Hi pretty! Big hugs XOXO! 168h';
 
   const tabLabel = page._guid || 'T?'; // fallback safety
 
