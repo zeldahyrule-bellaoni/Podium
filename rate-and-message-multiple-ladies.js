@@ -3,7 +3,7 @@ module.exports = async function runRateAndMessageMultipleLadies(page, tierConfig
 
   // 🚨 CANONICAL EXCLUSION SET (LADY NAMES, case-insensitive)
   const excludedLadyNames = new Set([
-    'Bella Swan','Alice','Eve','Diana','Catherine',
+    'Bella Swan','Veronica Park','smyle','Dee Dee Kelley','Indila','Zelda Hyrule','Her Majesty','Felis Felicitas','Wild Rose','Agent X','Giggles','Pania',
     // add all names you want to exclude
   ].map(n => n.toLowerCase())); // convert to lowercase for case-insensitive matching
 
