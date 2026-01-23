@@ -115,8 +115,8 @@ module.exports = async function runRateAndMessageMultipleLadies(page, tierConfig
     console.log('✅ No excluded ladies detected automatically. Please manually cross-verify before continuing.');
   }
   
-  console.log('⏸ Pausing for 5 minutes to allow manual cancellation...');
-  await page.waitForTimeout(30 * 60 * 1000); // 30 minutes time out
+  console.log('⏸ Pausing for 30 seconds to allow manual cancellation...');
+  await page.waitForTimeout(30 * 1000); // 30 seconds time out
 
   // final SAFE profiles
   const finalProfiles = collectedLadies
