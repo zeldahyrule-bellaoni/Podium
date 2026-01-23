@@ -1,5 +1,5 @@
 module.exports = {
-  evenDayRuns: {
+  oddDayRuns: {
     1: [
       { tierId: 10, startPage: 1,   endPage: 7 },
       { tierId: 10, startPage: 8,   endPage: 14 },
@@ -55,7 +55,7 @@ module.exports = {
     ]
   },
 
-  oddDayRuns: {
+  evenDayRuns: {
     7: [
       { tierId: 10, startPage: 253, endPage: 259 },
       { tierId: 10, startPage: 260, endPage: 266 },
