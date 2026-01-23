@@ -4,7 +4,7 @@ module.exports = async function runRateAndMessageMultipleLadies(page, tierConfig
   const excludedProfileIds = [
     '7709322','11264860','11264915','11265728','11265695',
     '11266176','11266738','6597974','7722810','7550302',
-    '11285359','11258511','2914453','7506725',
+    '11285359','11258511','2914453','7506725','8525841','8408234'
   ];
 
   const m1 = '“The face is a mask worn by the mind.” - Friedrich Nietzsche.	Thank you! xoxo	₍^. .^₎⟆ ♡♡♡	Max love to you';
