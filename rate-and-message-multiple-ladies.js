@@ -1,13 +1,14 @@
 // rate-and-message-multiple-ladies.js
 module.exports = async function runRateAndMessageMultipleLadies(page, tierConfigs) {
 
+  // 🟢🟢🟢🟢🟢🟢MINDFUL ABOUT COMMA AT THE END AND IN BETWEEN🟢🟢🟢🟢🟢🟢🟢 here
   const excludedProfileIds = [
     '7709322','11264860','11264915','11265728','11265695',
     '11266176','11266738','6597974','7722810','7550302',
-    '11285359','11258511','2914453','7506725','8525841','8408234'
+    '11285359','11258511','2914453','7506725','8525841','8408234',
   ];
 
-  // 🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢 here
+  // 🟢🟢🟢🟢🟢🟢MINDFUL ABOUT SINGLE QUOTES🟢🟢🟢🟢🟢🟢🟢 here
   const m1 = '“The face is a mask worn by the mind.” - Friedrich Nietzsche.	Thank you! xoxo	₍^. .^₎⟆ ♡♡♡	Max love to you';
   const m2 = '“The face is a mask worn by the mind.” - Friedrich Nietzsche.	Thank you! xoxo	₍^. .^₎⟆ ♡♡♡';
   const m3 = '“The face is a mask worn by the mind.” - Friedrich Nietzsche.	Thank you! xoxo	₍^. .^₎⟆ ♡♡♡	168h';
