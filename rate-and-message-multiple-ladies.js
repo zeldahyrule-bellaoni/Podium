@@ -1,12 +1,11 @@
 // rate-and-message-multiple-ladies.js
 module.exports = async function runRateAndMessageMultipleLadies(page, tierConfigs) {
 
-  // 🚨 CANONICAL EXCLUSION SET (LADY IDs)
-  const excludedLadyIds = new Set([
-    '7709322','11264860','11264915','11265695','11265728',
-    '11266176','11266738','6597974','7722810','7550302',
-    '11285359','11258511','2914453','7506725','8525841','8408234',
-  ]);
+  // 🚨 CANONICAL EXCLUSION SET (LADY NAMES, case-insensitive)
+  const excludedLadyNames = new Set([
+    'Bella Swan','Alice','Eve','Diana','Catherine',
+    // add all names you want to exclude
+  ].map(n => n.toLowerCase())); // convert to lowercase for case-insensitive matching
 
   const m1 = '“The face is a mask worn by the mind.” - Friedrich Nietzsche. Thank you! xoxo ₍^. .^₎⟆ ♡♡♡ Max love to you';
   const m2 = '“The face is a mask worn by the mind.” - Friedrich Nietzsche. Thank you! xoxo ₍^. .^₎⟆ ♡♡♡';
@@ -29,7 +28,7 @@ module.exports = async function runRateAndMessageMultipleLadies(page, tierConfig
   for (const { tierId, startPage, endPage } of tierConfigs) { 
     for (let currentPage = startPage; currentPage <= endPage; currentPage++) { //goes page by page inside each tier
 
-      const ladiesOnPage = await page.evaluate( //runs code inside the browser context
+      const ladiesOnPage = await page.evaluate(
         async ({ currentPage, tierId }) => {
           const res = await fetch('/ajax/ranking/players.php', {
             method: 'POST',
@@ -41,34 +40,29 @@ module.exports = async function runRateAndMessageMultipleLadies(page, tierConfig
             credentials: 'same-origin'
           });
 
-          const data = await res.json(); //returns html (response) inside json
+          const data = await res.json();
           if (!data.html) return [];
 
           const container = document.createElement('div');
-          container.innerHTML = data.html; //inserts html into a container so we can search it
+          container.innerHTML = data.html;
 
-          const rows = container.querySelectorAll('tr'); //each plaer is 1 table row
-          const results = []; //stores result for the lady
+          const rows = container.querySelectorAll('tr');
+          const results = [];
 
-          //filtering logic
-          rows.forEach(row => { //meaning in each row
-            // 1) must be in a guild 
+          rows.forEach(row => {
             const guildCell = row.querySelector('.ranking-player-guild');
             if (!guildCell) return;
-
-            const clubLink = guildCell.querySelector('a[href*="guilds.php"]'); //must have a guild link
+            const clubLink = guildCell.querySelector('a[href*="guilds.php"]');
             if (!clubLink) return;
 
-            // profile id
             const profileLink = row.querySelector('a[href*="profile.php?id="]');
             if (!profileLink) return;
 
-            const profileMatch = profileLink.href.match(/id=(\d+)/); //pulls the numeric id from profile URL
+            const profileMatch = profileLink.href.match(/id=(\d+)/);
             if (!profileMatch) return;
 
-            const profileId = profileMatch[1]; //stores the actual profile id number for the lady
+            const profileId = profileMatch[1];
 
-            // lady id + name from startPrivateChat
             const chatBtn = row.querySelector('[onclick*="startPrivateChat"]');
             if (!chatBtn) return;
 
@@ -76,8 +70,8 @@ module.exports = async function runRateAndMessageMultipleLadies(page, tierConfig
             const chatMatch = onclick.match(/startPrivateChat\((\d+),\s*'([^']+)'\)/);
             if (!chatMatch) return;
 
-            const ladyId = chatMatch[1]; //captures ladyid
-            const name = chatMatch[2]; //captures name
+            const ladyId = chatMatch[1];
+            const name = chatMatch[2];
 
             results.push({ profileId, ladyId, name });
           });
@@ -104,7 +98,7 @@ module.exports = async function runRateAndMessageMultipleLadies(page, tierConfig
   // 🚨 EARLY EXCLUSION (HARD SAFETY)
   // ─────────────────────────────────────────────
   const excludedFound = collectedLadies.filter(l =>
-    excludedLadyIds.has(l.ladyId)
+    excludedLadyNames.has(l.name.toLowerCase())
   );
 
   console.log('⏸ MANUAL VERIFICATION PAUSE INITIATED');
@@ -122,11 +116,11 @@ module.exports = async function runRateAndMessageMultipleLadies(page, tierConfig
   }
   
   console.log('⏸ Pausing for 5 minutes to allow manual cancellation...');
-  await page.waitForTimeout(30 * 60 * 1000); // 30 minutes time out. Comment it and the console log when you are confident.
+  await page.waitForTimeout(30 * 60 * 1000); // 30 minutes time out
 
   // final SAFE profiles
   const finalProfiles = collectedLadies
-    .filter(l => !excludedLadyIds.has(l.ladyId)) //removes excluded ladies from collected ladies
+    .filter(l => !excludedLadyNames.has(l.name.toLowerCase()))
     .map(l => l.profileId); //keeps only the profile id for collected ladies
 
   // ─────────────────────────────────────────────
@@ -137,7 +131,6 @@ module.exports = async function runRateAndMessageMultipleLadies(page, tierConfig
     const profileId = finalProfiles[i];
     const url = `https://v3.g.ladypopular.com/profile.php?id=${profileId}`;
 
-    //track what happened - used only for logging
     let caseType = 'case1';
     let ratingResult = null;
     let ratingGiven = null;
@@ -148,7 +141,6 @@ module.exports = async function runRateAndMessageMultipleLadies(page, tierConfig
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
       await page.waitForTimeout(2000);
 
-      //detecting already voted cases (case where game shows all prizes or 168h), and then separating them as case 2 and case 3
       const alreadyVotedText = await page
         .locator('.lady-rating-wraper .alreadyVoted')
         .textContent()
@@ -156,70 +148,61 @@ module.exports = async function runRateAndMessageMultipleLadies(page, tierConfig
 
       if (alreadyVotedText.includes('won all podium prizes')) caseType = 'case2';
       else if (alreadyVotedText.includes('already 3 votes')) caseType = 'case3';
-      // if none of it is true, it remains case 1
 
-      // giving rating to case 1 ladies
       if (caseType === 'case1') {
         try {
           const ratingButtons = await page
-          .locator('.lady-rating-wraper ol.rating li.active button')
-          .all();
+            .locator('.lady-rating-wraper ol.rating li.active button')
+            .all();
           
           let maxVote = null;
           
-          for (const btn of ratingButtons) { //loop through each rating button
-            const onclick = await btn.getAttribute('onclick'); //Example result is - "podiumVote('4',6416927,3)"
+          for (const btn of ratingButtons) {
+            const onclick = await btn.getAttribute('onclick');
             if (!onclick) continue;
             
             const match = onclick.match(/podiumVote\('(\d+)',(\d+),(\d+)\)/);
             if (!match) continue;
             
-            const [, podiumType, ladyId, rating] = match; //destructures the data to podiumtype, ladyId and rating
-            const ratingNum = Number(rating); //converts rating to number 
-        
-            // 🚨 EXCLUSION GUARD — THIS IS THE EXACT SPOT
-            if (excludedLadyIds.has(ladyId)) {
+            const [, podiumType, ladyId, rating] = match;
+            const ratingNum = Number(rating);
+
+            // 🚨 EXCLUSION GUARD — case-insensitive name check (we need to map profileId → name)
+            const ladyObj = collectedLadies.find(l => l.ladyId === ladyId);
+            if (ladyObj && excludedLadyNames.has(ladyObj.name.toLowerCase())) {
                 skipped = true;
-                return; // exits the entire function/tab
-            } 
+                return;
+            }
 
             if (!maxVote || ratingNum > maxVote.ratingNum) { 
-              maxVote = { podiumType, ladyId, rating, ratingNum }; //We store everything we need for the vote request: rating is string version, ratingNum is numeric version
+              maxVote = { podiumType, ladyId, rating, ratingNum };
             }
           }
           
-          if (maxVote) { //we are checking if we have a maxVote
-            const { podiumType, ladyId, rating } = maxVote; //extracting final vote data
+          if (maxVote) {
+            const { podiumType, ladyId, rating } = maxVote;
             
-            const res = await page.evaluate( //sending the vote request
+            const res = await page.evaluate(
               async ({ podiumType, ladyId, rating }) => {
                 const r = await fetch('/ajax/contest/podium.php', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                  body: new URLSearchParams({
-                    action: 'vote',
-                    podiumType,
-                    ladyId,
-                    rating
-                  })
+                  body: new URLSearchParams({ action: 'vote', podiumType, ladyId, rating })
                 });
-                
                 return r.json();
               },
               { podiumType, ladyId, rating }
             );
             
-            ratingResult = res?.status === 1; //determines if success or failure
-            if (ratingResult) ratingGiven = rating; //stores the rating value given
+            ratingResult = res?.status === 1;
+            if (ratingResult) ratingGiven = rating;
           }
           
         } catch {
-          ratingResult = false; //if failure, safely continues so script wont crash
+          ratingResult = false;
         }
       }
 
-      //messaging logic
-      //selecting message w.r.t case type
       const message =
         caseType === 'case1' ? m1 :
         caseType === 'case2' ? m2 : m3;
@@ -235,7 +218,7 @@ module.exports = async function runRateAndMessageMultipleLadies(page, tierConfig
           const [, id, name] = match;
 
           await page.evaluate(({ id, name }) => {
-            startPrivateChat(id, name); //starts private chat
+            startPrivateChat(id, name);
           }, { id, name });
 
           try {
@@ -244,16 +227,14 @@ module.exports = async function runRateAndMessageMultipleLadies(page, tierConfig
               document.getElementById('msgArea').value = msg;
               document.getElementById('_sendMessageButton').click();
             }, message);
-            messageResult = true; //means we successfully executed the send action without errors
+            messageResult = true;
           } catch {
             messageResult = false;
           }
         }
       }
 
-    } catch {
-      // intentionally swallowed
-    }
+    } catch {}
 
     const ratingEmoji =
       ratingResult === true ? `✅(${ratingGiven})` :
