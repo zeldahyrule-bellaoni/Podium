@@ -21,7 +21,7 @@ module.exports = async function runMultiTab(context) {
     new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
   );
 
-  const today = nowIST.toISOString().slice(0, 10);
+  const today = nowIST.toLocaleDateString('en-CA'); // YYYY-MM-DD
   const dayNumber = nowIST.getDate();
   const isOddDay = dayNumber % 2 === 1;
 
