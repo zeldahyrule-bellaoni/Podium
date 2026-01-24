@@ -166,5 +166,5 @@ module.exports = { /*
       { tierId: 10, startPage: 239, endPage: 245 },
       { tierId: 10, startPage: 246, endPage: 252 }
     ]
-  },
+  }
 };
