@@ -1,4 +1,4 @@
-module.exports = {
+module.exports = { /*
   oddDayRuns: {
     1: [
       { tierId: 10, startPage: 1,   endPage: 7 },
@@ -109,5 +109,62 @@ module.exports = {
       { tierId: 7, startPage: 111, endPage: 121 },
       { tierId: 7, startPage: 122, endPage: 127 }
     ]
-  }
+  } */
+
+  //---------------------------------------------------------------------------------------------------
+  evenDayRuns: {
+    1: [
+      { tierId: 10, startPage: 1,   endPage: 7 },
+      { tierId: 10, startPage: 8,   endPage: 14 },
+      { tierId: 10, startPage: 15,  endPage: 21 },
+      { tierId: 10, startPage: 22,  endPage: 28 },
+      { tierId: 10, startPage: 29,  endPage: 35 },
+      { tierId: 10, startPage: 36,  endPage: 42 }
+    ],
+
+    2: [
+      { tierId: 10, startPage: 43, endPage: 49 },
+      { tierId: 10, startPage: 50, endPage: 56 },
+      { tierId: 10, startPage: 57, endPage: 63 },
+      { tierId: 10, startPage: 64, endPage: 70 },
+      { tierId: 10, startPage: 71, endPage: 77 },
+      { tierId: 10, startPage: 78, endPage: 84 }
+    ],
+
+    3: [
+      { tierId: 10, startPage: 85, endPage: 91 },
+      { tierId: 10, startPage: 92, endPage: 98 },
+      { tierId: 10, startPage: 99, endPage: 105 },
+      { tierId: 10, startPage: 106, endPage: 112 },
+      { tierId: 10, startPage: 113, endPage: 119 },
+      { tierId: 10, startPage: 120, endPage: 126 }
+    ],
+
+    4: [
+      { tierId: 10, startPage: 127, endPage: 133 },
+      { tierId: 10, startPage: 134, endPage: 140 },
+      { tierId: 10, startPage: 141, endPage: 147 },
+      { tierId: 10, startPage: 148, endPage: 154 },
+      { tierId: 10, startPage: 155, endPage: 161 },
+      { tierId: 10, startPage: 162, endPage: 168 }
+    ],
+
+    5: [
+      { tierId: 10, startPage: 169, endPage: 175 },
+      { tierId: 10, startPage: 176, endPage: 182 },
+      { tierId: 10, startPage: 183, endPage: 189 },
+      { tierId: 10, startPage: 190, endPage: 196 },
+      { tierId: 10, startPage: 197, endPage: 203 },
+      { tierId: 10, startPage: 204, endPage: 210 }
+    ],
+
+    6: [
+      { tierId: 10, startPage: 211, endPage: 217 },
+      { tierId: 10, startPage: 218, endPage: 224 },
+      { tierId: 10, startPage: 225, endPage: 231 },
+      { tierId: 10, startPage: 232, endPage: 238 },
+      { tierId: 10, startPage: 239, endPage: 245 },
+      { tierId: 10, startPage: 246, endPage: 252 }
+    ]
+  },
 };
